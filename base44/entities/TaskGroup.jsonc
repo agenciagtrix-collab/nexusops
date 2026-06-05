@@ -1,0 +1,26 @@
+{
+  "name": "TaskGroup",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do grupo de tarefas"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID do projeto"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor do grupo"
+    }
+  },
+  "required": [
+    "name",
+    "project_id"
+  ]
+}

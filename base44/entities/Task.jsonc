@@ -1,0 +1,139 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da tarefa"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o rica da tarefa"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID do projeto"
+    },
+    "group_id": {
+      "type": "string",
+      "description": "ID do grupo de tarefas"
+    },
+    "assignee_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos respons\u00e1veis"
+    },
+    "status": {
+      "type": "string",
+      "default": "todo",
+      "description": "Status da tarefa"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de entrega"
+    },
+    "estimated_hours": {
+      "type": "number",
+      "description": "Tempo estimado em horas"
+    },
+    "logged_hours": {
+      "type": "number",
+      "description": "Tempo executado em horas"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags"
+    },
+    "parent_task_id": {
+      "type": "string",
+      "description": "ID da tarefa pai (subtarefa)"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de tarefas dependentes"
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      },
+      "description": "Lista de verifica\u00e7\u00e3o"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Anexos"
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "description": "Tarefa recorrente"
+    },
+    "recurrence_rule": {
+      "type": "string",
+      "description": "Regra de recorr\u00eancia"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de conclus\u00e3o"
+    },
+    "custom_fields": {
+      "type": "object",
+      "description": "Campos personalizados"
+    }
+  },
+  "required": [
+    "title",
+    "project_id"
+  ]
+}

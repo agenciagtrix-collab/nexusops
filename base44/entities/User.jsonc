@@ -1,0 +1,33 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "N\u00edvel de acesso do usu\u00e1rio"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL do avatar do usu\u00e1rio"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefone do usu\u00e1rio"
+    },
+    "position": {
+      "type": "string",
+      "description": "Cargo do usu\u00e1rio"
+    },
+    "department": {
+      "type": "string",
+      "description": "Departamento do usu\u00e1rio"
+    }
+  },
+  "required": []
+}

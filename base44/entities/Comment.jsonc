@@ -1,0 +1,49 @@
+{
+  "name": "Comment",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado do coment\u00e1rio"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "ID da tarefa"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID do projeto"
+    },
+    "parent_comment_id": {
+      "type": "string",
+      "description": "ID do coment\u00e1rio pai (resposta)"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs mencionados"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "content"
+  ]
+}
