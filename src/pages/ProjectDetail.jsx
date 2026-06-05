@@ -5,27 +5,48 @@ import { base44 } from '@/api/base44Client';
 import TopBar from '@/components/layout/TopBar';
 import KanbanView from '@/components/tasks/KanbanView';
 import ListView from '@/components/tasks/ListView';
+import TableView from '@/components/tasks/TableView';
+import CalendarView from '@/components/tasks/CalendarView';
+import TimelineView from '@/components/tasks/TimelineView';
 import TaskDialog from '@/components/tasks/TaskDialog';
+import ProjectOverviewTab from '@/components/project/ProjectOverviewTab';
+import ProjectTeamTab from '@/components/project/ProjectTeamTab';
+import ProjectFilesTab from '@/components/project/ProjectFilesTab';
+import ProjectHistoryTab from '@/components/project/ProjectHistoryTab';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Settings, LayoutGrid, List, Calendar, BarChart3 } from 'lucide-react';
+import {
+  ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
+  GitBranch, Table2, Users, FileText, Activity, Eye
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-const statusLabels = {
-  not_started: 'Não Iniciado', in_progress: 'Em Andamento', on_hold: 'Em Espera',
-  completed: 'Concluído', cancelled: 'Cancelado',
-};
+const moduleTabItems = [
+  { key: 'overview', label: 'Visão Geral', icon: Eye },
+  { key: 'tasks', label: 'Tarefas', icon: List },
+  { key: 'team', label: 'Equipe', icon: Users },
+  { key: 'files', label: 'Arquivos', icon: FileText },
+  { key: 'history', label: 'Histórico', icon: Activity },
+];
+
+const taskViewItems = [
+  { key: 'kanban', label: 'Kanban', icon: LayoutGrid },
+  { key: 'list', label: 'Lista', icon: List },
+  { key: 'table', label: 'Tabela', icon: Table2 },
+  { key: 'calendar', label: 'Calendário', icon: CalendarDays },
+  { key: 'timeline', label: 'Timeline', icon: GitBranch },
+];
 
 export default function ProjectDetail() {
   const { onMenuToggle } = useOutletContext();
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [view, setView] = useState('kanban');
+  const [moduleTab, setModuleTab] = useState('overview');
+  const [taskView, setTaskView] = useState('kanban');
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [defaultStatus, setDefaultStatus] = useState('todo');
@@ -47,6 +68,11 @@ export default function ProjectDetail() {
     queryFn: () => base44.entities.User.list('full_name', 100),
   });
 
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list('name', 50),
+  });
+
   const createTask = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {
@@ -63,7 +89,6 @@ export default function ProjectDetail() {
       queryClient.invalidateQueries({ queryKey: ['tasks', id] });
       setTaskDialogOpen(false);
       setSelectedTask(null);
-      toast.success('Tarefa atualizada!');
     },
   });
 
@@ -71,7 +96,7 @@ export default function ProjectDetail() {
     if (selectedTask?.id) {
       updateTask.mutate({ taskId: selectedTask.id, data });
     } else {
-      createTask.mutate(data);
+      createTask.mutate({ ...data, project_id: id });
     }
   };
 
@@ -96,6 +121,7 @@ export default function ProjectDetail() {
 
   const completedCount = tasks.filter(t => t.status === 'done').length;
   const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const client = clients.find(c => c.id === project?.client_id);
 
   if (!project) {
     return (
@@ -157,44 +183,119 @@ export default function ProjectDetail() {
             </div>
           </Card>
 
-          {/* View Toggle + Actions */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <Tabs value={view} onValueChange={setView}>
-              <TabsList className="bg-card">
-                <TabsTrigger value="kanban" className="gap-1.5 text-xs">
-                  <LayoutGrid className="w-3.5 h-3.5" /> Kanban
-                </TabsTrigger>
-                <TabsTrigger value="list" className="gap-1.5 text-xs">
-                  <List className="w-3.5 h-3.5" /> Lista
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <Button size="sm" className="gap-1.5" onClick={() => handleAddTask()}>
-              <Plus className="w-4 h-4" /> Nova Tarefa
-            </Button>
+          {/* Module Tabs */}
+          <div className="flex items-center gap-1 overflow-x-auto border-b border-border pb-0">
+            {moduleTabItems.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setModuleTab(tab.key)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors -mb-px",
+                    moduleTab === tab.key
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Views */}
-          <Card className="p-4">
-            {view === 'kanban' && (
-              <KanbanView
-                tasks={tasks}
-                statuses={project.custom_statuses}
-                onTaskClick={handleTaskClick}
-                onAddTask={handleAddTask}
-                users={users}
-              />
-            )}
-            {view === 'list' && (
-              <ListView
-                tasks={tasks}
-                onTaskClick={handleTaskClick}
-                onToggleComplete={handleToggleComplete}
-                users={users}
-              />
-            )}
-          </Card>
+          {/* Module Content */}
+          {moduleTab === 'overview' && (
+            <ProjectOverviewTab project={project} tasks={tasks} users={users} client={client} />
+          )}
+
+          {moduleTab === 'team' && (
+            <ProjectTeamTab project={project} users={users} tasks={tasks} />
+          )}
+
+          {moduleTab === 'files' && (
+            <ProjectFilesTab project={project} tasks={tasks} />
+          )}
+
+          {moduleTab === 'history' && (
+            <ProjectHistoryTab projectId={id} />
+          )}
+
+          {moduleTab === 'tasks' && (
+            <div className="space-y-4">
+              {/* Task view selector + actions */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-1 overflow-x-auto">
+                  {taskViewItems.map(v => {
+                    const Icon = v.icon;
+                    return (
+                      <button
+                        key={v.key}
+                        onClick={() => setTaskView(v.key)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg whitespace-nowrap transition-colors",
+                          taskView === v.key
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {v.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button size="sm" className="gap-1.5 shrink-0" onClick={() => handleAddTask()}>
+                  <Plus className="w-4 h-4" /> Nova Tarefa
+                </Button>
+              </div>
+
+              <Card className="p-4">
+                {taskView === 'kanban' && (
+                  <KanbanView
+                    tasks={tasks}
+                    statuses={project.custom_statuses}
+                    onTaskClick={handleTaskClick}
+                    onAddTask={handleAddTask}
+                    users={users}
+                  />
+                )}
+                {taskView === 'list' && (
+                  <ListView
+                    tasks={tasks}
+                    onTaskClick={handleTaskClick}
+                    onToggleComplete={handleToggleComplete}
+                    users={users}
+                  />
+                )}
+                {taskView === 'table' && (
+                  <TableView
+                    tasks={tasks}
+                    statuses={project.custom_statuses}
+                    onTaskClick={handleTaskClick}
+                    onToggleComplete={handleToggleComplete}
+                    onAddTask={handleAddTask}
+                    users={users}
+                  />
+                )}
+                {taskView === 'calendar' && (
+                  <CalendarView
+                    tasks={tasks}
+                    statuses={project.custom_statuses}
+                    onTaskClick={handleTaskClick}
+                  />
+                )}
+                {taskView === 'timeline' && (
+                  <TimelineView
+                    tasks={tasks}
+                    statuses={project.custom_statuses}
+                    onTaskClick={handleTaskClick}
+                  />
+                )}
+              </Card>
+            </div>
+          )}
         </div>
       </div>
 

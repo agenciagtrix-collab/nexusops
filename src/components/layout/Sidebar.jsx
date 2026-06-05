@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Plus,
   Search,
-  LogOut
+  LogOut,
+  FileText,
+  Sliders
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,7 +26,9 @@ const navItems = [
   { icon: CheckSquare, label: 'Minhas Tarefas', path: '/my-tasks' },
   { icon: Users, label: 'Equipes', path: '/teams' },
   { icon: Building2, label: 'Clientes', path: '/clients' },
+  { icon: FileText, label: 'Documentos', path: '/documents' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+  { icon: Sliders, label: 'Campos', path: '/custom-fields' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 

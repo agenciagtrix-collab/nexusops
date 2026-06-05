@@ -22,6 +22,8 @@ import Teams from '@/pages/Teams';
 import Clients from '@/pages/Clients';
 import Analytics from '@/pages/Analytics';
 import SettingsPage from '@/pages/SettingsPage';
+import Documents from '@/pages/Documents';
+import CustomFields from '@/pages/CustomFields';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -67,6 +69,8 @@ const AuthenticatedApp = () => {
           <Route path="/clients" element={<Clients />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/custom-fields" element={<CustomFields />} />
         </Route>
       </Route>
 
