@@ -1,9 +1,10 @@
 import React from 'react';
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import NotificationPanel from '@/components/layout/NotificationPanel';
 
 export default function TopBar({ onMenuToggle, title, actions }) {
   const { user } = useAuth();
@@ -28,10 +29,7 @@ export default function TopBar({ onMenuToggle, title, actions }) {
 
       <div className="flex items-center gap-2">
         {actions}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
-        </Button>
+        <NotificationPanel />
         <Avatar className="w-8 h-8 cursor-pointer" onClick={() => navigate('/profile')}>
           <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
             {initials}

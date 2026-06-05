@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
+  const [filterTeam, setFilterTeam] = useState('all');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -53,11 +54,15 @@ export default function Dashboard() {
     queryFn: () => base44.entities.User.list('full_name', 100),
   });
 
+  // Build unique teams from project team_ids
+  const allTeamMembers = [...new Set(projects.flatMap(p => p.team_ids || []))];
+
   // Apply filters
   const filteredProjects = projects.filter(p => {
     if (filterClient !== 'all' && p.client_id !== filterClient) return false;
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
     if (filterUser !== 'all' && p.owner_id !== filterUser && !p.team_ids?.includes(filterUser)) return false;
+    if (filterTeam !== 'all' && !p.team_ids?.includes(filterTeam)) return false;
     if (filterPeriod === 'month' && p.due_date) {
       const due = parseISO(p.due_date);
       if (!isWithinInterval(due, { start: startOfMonth(new Date()), end: endOfMonth(new Date()) })) return false;
@@ -73,6 +78,9 @@ export default function Dashboard() {
   });
 
   const activeProjects = filteredProjects.filter(p => p.status !== 'completed' && p.status !== 'cancelled');
+  const overdueProjects = filteredProjects.filter(p =>
+    p.due_date && isPast(new Date(p.due_date)) && !isToday(new Date(p.due_date)) && p.status !== 'completed' && p.status !== 'cancelled'
+  );
   const completedTasks = filteredTasks.filter(t => t.status === 'done');
   const overdueTasks = filteredTasks.filter(t =>
     t.due_date && isPast(new Date(t.due_date)) && !isToday(new Date(t.due_date)) && t.status !== 'done'
@@ -158,12 +166,23 @@ export default function Dashboard() {
                 {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}
               </SelectContent>
             </Select>
-            {(filterClient !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterUser !== 'all') && (
+            <Select value={filterTeam} onValueChange={setFilterTeam}>
+              <SelectTrigger className="w-auto min-w-[130px] h-8 text-xs">
+                <SelectValue placeholder="Equipe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as equipes</SelectItem>
+                {users.filter(u => allTeamMembers.includes(u.id)).map(u => (
+                  <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(filterClient !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterUser !== 'all' || filterTeam !== 'all') && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 text-xs text-muted-foreground"
-                onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterPeriod('all'); setFilterUser('all'); }}
+                onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterPeriod('all'); setFilterUser('all'); setFilterTeam('all'); }}
               >
                 Limpar filtros
               </Button>
@@ -173,8 +192,8 @@ export default function Dashboard() {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Projetos Ativos" value={activeProjects.length} icon={FolderKanban} color="primary" />
+            <StatCard title="Projetos Atrasados" value={overdueProjects.length} icon={AlertTriangle} color="destructive" />
             <StatCard title="Tarefas Concluídas" value={completedTasks.length} icon={CheckSquare} color="success" />
-            <StatCard title="Tarefas Atrasadas" value={overdueTasks.length} icon={AlertTriangle} color="destructive" />
             <StatCard title="Entregas esta Semana" value={weekDeliveries.length} icon={Calendar} color="warning" />
           </div>
 

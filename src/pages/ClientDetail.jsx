@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft, Building2, Mail, Phone, MapPin, FileText, FolderKanban,
-  Edit, CheckCircle2, AlertTriangle, Clock, Upload, Loader2, ExternalLink, Image, Film, FileSpreadsheet, File
+  Edit, CheckCircle2, AlertTriangle, Clock, Upload, Loader2, Image, Film, FileSpreadsheet, File, Activity
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -79,6 +79,21 @@ export default function ClientDetail() {
     enabled: projects.length > 0,
   });
 
+  const { data: activities = [] } = useQuery({
+    queryKey: ['client-activities', id],
+    queryFn: async () => {
+      const projectIds = projects.map(p => p.id);
+      if (projectIds.length === 0) return [];
+      const acts = [];
+      for (const pid of projectIds) {
+        const a = await base44.entities.Activity.filter({ project_id: pid }, '-created_date', 30);
+        acts.push(...a);
+      }
+      return acts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 50);
+    },
+    enabled: projects.length > 0,
+  });
+
   if (!client) {
     return (
       <>
@@ -103,6 +118,7 @@ export default function ClientDetail() {
     { key: 'tasks', label: `Tarefas (${allTasks.length})` },
     { key: 'files', label: 'Arquivos' },
     { key: 'notes', label: 'Observações' },
+    { key: 'history', label: 'Histórico' },
   ];
 
   return (
@@ -299,6 +315,35 @@ export default function ClientDetail() {
                 </div>
               )}
             </Card>
+          )}
+
+          {/* History */}
+          {activeTab === 'history' && (
+            <div className="space-y-3">
+              {activities.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <Activity className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhuma atividade registrada</p>
+                </Card>
+              ) : (
+                <div className="relative">
+                  <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+                  <div className="space-y-2 pb-2">
+                    {activities.map((act) => (
+                      <div key={act.id} className="flex items-start gap-4 pl-10 relative">
+                        <div className="absolute left-2.5 top-3 w-3 h-3 rounded-full bg-primary/20 border-2 border-primary" />
+                        <Card className="flex-1 p-3">
+                          <p className="text-sm">{act.description}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(act.created_date), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                        </Card>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Tasks */}

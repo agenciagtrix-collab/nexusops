@@ -1,0 +1,58 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio destinat\u00e1rio"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "task_assigned",
+        "task_due",
+        "comment_added",
+        "status_changed",
+        "project_created",
+        "member_added",
+        "task_completed",
+        "mention"
+      ],
+      "description": "Tipo de notifica\u00e7\u00e3o"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da notifica\u00e7\u00e3o"
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensagem da notifica\u00e7\u00e3o"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se foi lida"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Tipo de entidade relacionada (task, project, comment)"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID da entidade relacionada"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID do projeto relacionado"
+    },
+    "link": {
+      "type": "string",
+      "description": "Link de navega\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "user_id",
+    "type",
+    "title"
+  ]
+}
