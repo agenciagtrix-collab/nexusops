@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FolderKanban, CheckSquare, AlertTriangle, Users, Plus, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { FolderKanban, CheckSquare, AlertTriangle, Users, Plus, TrendingUp, Clock, Calendar, Settings2 } from 'lucide-react';
+import DashboardCustomizer, { loadWidgets, saveWidgets } from '@/components/dashboard/DashboardCustomizer';
 import { isPast, isToday, isThisWeek, isThisMonth, format, startOfMonth, endOfMonth, isWithinInterval, parseISO, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -28,6 +29,10 @@ export default function Dashboard() {
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
   const [filterTeam, setFilterTeam] = useState('all');
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [widgets, setWidgets] = useState(() => loadWidgets());
+
+  const isVisible = (id) => widgets.find(w => w.id === id)?.enabled !== false;
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -114,12 +119,17 @@ export default function Dashboard() {
         onMenuToggle={onMenuToggle}
         title="Dashboard"
         actions={
-          <Link to="/projects/new">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Novo Projeto</span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setShowCustomizer(true)} title="Personalizar Dashboard">
+              <Settings2 className="w-4 h-4" />
             </Button>
-          </Link>
+            <Link to="/projects/new">
+              <Button size="sm" className="gap-1.5">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Novo Projeto</span>
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -190,15 +200,17 @@ export default function Dashboard() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Projetos Ativos" value={activeProjects.length} icon={FolderKanban} color="primary" />
-            <StatCard title="Projetos Atrasados" value={overdueProjects.length} icon={AlertTriangle} color="destructive" />
-            <StatCard title="Tarefas Concluídas" value={completedTasks.length} icon={CheckSquare} color="success" />
-            <StatCard title="Entregas esta Semana" value={weekDeliveries.length} icon={Calendar} color="warning" />
-          </div>
+          {isVisible('stats') && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard title="Projetos Ativos" value={activeProjects.length} icon={FolderKanban} color="primary" />
+              <StatCard title="Projetos Atrasados" value={overdueProjects.length} icon={AlertTriangle} color="destructive" />
+              <StatCard title="Tarefas Concluídas" value={completedTasks.length} icon={CheckSquare} color="success" />
+              <StatCard title="Entregas esta Semana" value={weekDeliveries.length} icon={Calendar} color="warning" />
+            </div>
+          )}
 
           {/* Deliveries summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isVisible('deliveries') && (<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -249,15 +261,15 @@ export default function Dashboard() {
                 )}
               </div>
             </Card>
-          </div>
+          </div>)}
 
           {/* Main grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <ProjectsOverview projects={activeProjects} />
+              {isVisible('projects_overview') && <ProjectsOverview projects={activeProjects} />}
 
               {/* Workload */}
-              {workloadData.length > 0 && (
+              {isVisible('workload') && workloadData.length > 0 && (
                 <Card>
                   <CardHeader><CardTitle className="text-base font-heading flex items-center gap-2"><Users className="w-4 h-4" /> Carga de Trabalho (tarefas pendentes)</CardTitle></CardHeader>
                   <CardContent>
@@ -275,26 +287,36 @@ export default function Dashboard() {
               )}
 
               {/* Trend */}
-              <Card>
-                <CardHeader><CardTitle className="text-base font-heading flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Tendência de Conclusão</CardTitle></CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="concluidas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} name="Concluídas" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
+              {isVisible('trend') && (
+                <Card>
+                  <CardHeader><CardTitle className="text-base font-heading flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Tendência de Conclusão</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <LineChart data={trendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="concluidas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: 'hsl(var(--primary))' }} name="Concluídas" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             <div className="space-y-6">
-              <UpcomingDeadlines tasks={filteredTasks} />
-              <RecentActivity activities={activities} />
+              {isVisible('upcoming') && <UpcomingDeadlines tasks={filteredTasks} />}
+              {isVisible('activity') && <RecentActivity activities={activities} />}
             </div>
           </div>
+
+          {showCustomizer && (
+            <DashboardCustomizer
+              widgets={widgets}
+              onChange={setWidgets}
+              onClose={() => setShowCustomizer(false)}
+            />
+          )}
         </div>
       </div>
     </>

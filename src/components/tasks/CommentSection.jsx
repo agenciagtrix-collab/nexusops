@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Send, Reply, MessageSquare } from 'lucide-react';
+import { Send, Reply, MessageSquare, AtSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 function CommentItem({ comment, users, onReply }) {
@@ -27,7 +27,13 @@ function CommentItem({ comment, users, onReply }) {
               {formatDistanceToNow(new Date(comment.created_date), { addSuffix: true, locale: ptBR })}
             </span>
           </div>
-          <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+          <p className="text-sm whitespace-pre-wrap">
+            {comment.content.split(/(@\w+)/g).map((part, i) =>
+              part.startsWith('@') ? (
+                <span key={i} className="text-primary font-medium">{part}</span>
+              ) : part
+            )}
+          </p>
         </div>
         <button
           onClick={() => onReply?.(comment)}
@@ -45,6 +51,9 @@ export default function CommentSection({ taskId, projectId }) {
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const textareaRef = React.useRef(null);
 
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', taskId],
@@ -66,6 +75,31 @@ export default function CommentSection({ taskId, projectId }) {
     },
     onError: () => toast.error('Erro ao adicionar comentário'),
   });
+
+  const handleTextChange = (e) => {
+    const val = e.target.value;
+    setNewComment(val);
+    // Detect @ mention
+    const cursor = e.target.selectionStart;
+    const textBefore = val.slice(0, cursor);
+    const match = textBefore.match(/@(\w*)$/);
+    if (match) {
+      setMentionSearch(match[1]);
+      setMentionOpen(true);
+    } else {
+      setMentionOpen(false);
+    }
+  };
+
+  const insertMention = (user) => {
+    const cursor = textareaRef.current?.selectionStart || newComment.length;
+    const textBefore = newComment.slice(0, cursor);
+    const textAfter = newComment.slice(cursor);
+    const atPos = textBefore.lastIndexOf('@');
+    const newText = textBefore.slice(0, atPos) + `@${user.full_name?.split(' ')[0] || user.email} ` + textAfter;
+    setNewComment(newText);
+    setMentionOpen(false);
+  };
 
   const handleSubmit = () => {
     if (!newComment.trim()) return;
@@ -101,14 +135,41 @@ export default function CommentSection({ taskId, projectId }) {
               <button onClick={() => setReplyTo(null)} className="hover:text-foreground">✕</button>
             </div>
           )}
-          <Textarea
-            value={newComment}
-            onChange={e => setNewComment(e.target.value)}
-            placeholder="Escreva um comentário..."
-            rows={2}
-            className="text-sm resize-none"
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit(); }}
-          />
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={newComment}
+              onChange={handleTextChange}
+              placeholder="Escreva um comentário... use @ para mencionar alguém"
+              rows={2}
+              className="text-sm resize-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleSubmit();
+                if (e.key === 'Escape') setMentionOpen(false);
+              }}
+            />
+            {mentionOpen && (
+              <div className="absolute bottom-full left-0 mb-1 bg-card border border-border rounded-lg shadow-lg w-48 overflow-hidden z-10">
+                {users
+                  .filter(u => u.id !== user?.id && (u.full_name?.toLowerCase().includes(mentionSearch.toLowerCase()) || u.email?.toLowerCase().includes(mentionSearch.toLowerCase())))
+                  .slice(0, 5)
+                  .map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onMouseDown={() => insertMention(u)}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors flex items-center gap-2"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">
+                        {u.full_name?.[0] || '?'}
+                      </div>
+                      {u.full_name || u.email}
+                    </button>
+                  ))
+                }
+              </div>
+            )}
+          </div>
           <div className="flex justify-end">
             <Button
               size="sm"

@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Save, X, MessageSquare, Clock, RefreshCw, Link2 } from 'lucide-react';
+import { Plus, Trash2, Save, X, MessageSquare, Clock, RefreshCw, Link2, GitMerge } from 'lucide-react';
+import DependencySelector from '@/components/tasks/DependencySelector';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
@@ -136,11 +137,14 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 mb-4">
+          <TabsList className="w-full grid grid-cols-4 mb-4">
             <TabsTrigger value="details">Detalhes</TabsTrigger>
-            <TabsTrigger value="extras">Checklist & Tags</TabsTrigger>
-            <TabsTrigger value="time" className="gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> Tempo
+            <TabsTrigger value="extras">Checklist</TabsTrigger>
+            <TabsTrigger value="time" className="gap-1">
+              <Clock className="w-3 h-3" /> Tempo
+            </TabsTrigger>
+            <TabsTrigger value="deps" className="gap-1">
+              <GitMerge className="w-3 h-3" /> Deps
             </TabsTrigger>
           </TabsList>
 
@@ -390,6 +394,23 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             />
           </div>
 
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
+            <Button type="button" className="gap-1.5" onClick={saveForm}>
+              <Save className="w-4 h-4" />
+              {isEdit ? 'Salvar' : 'Criar Tarefa'}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* Tab: Dependencies */}
+        <TabsContent value="deps" className="mt-0 space-y-4">
+          <DependencySelector
+            projectId={projectId}
+            currentTaskId={task?.id}
+            value={form.dependencies || []}
+            onChange={v => updateField('dependencies', v)}
+          />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
             <Button type="button" className="gap-1.5" onClick={saveForm}>
