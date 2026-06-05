@@ -13,13 +13,14 @@ import ProjectOverviewTab from '@/components/project/ProjectOverviewTab';
 import ProjectTeamTab from '@/components/project/ProjectTeamTab';
 import ProjectFilesTab from '@/components/project/ProjectFilesTab';
 import ProjectHistoryTab from '@/components/project/ProjectHistoryTab';
+import ProjectReportsTab from '@/components/project/ProjectReportsTab';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
-  GitBranch, Table2, Users, FileText, Activity, Eye
+  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ const moduleTabItems = [
   { key: 'tasks', label: 'Tarefas', icon: List },
   { key: 'team', label: 'Equipe', icon: Users },
   { key: 'files', label: 'Arquivos', icon: FileText },
+  { key: 'reports', label: 'Relatórios', icon: BarChart2 },
   { key: 'history', label: 'Histórico', icon: Activity },
 ];
 
@@ -113,6 +115,13 @@ export default function ProjectDetail() {
 
   const handleToggleComplete = (task) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
+    updateTask.mutate({
+      taskId: task.id,
+      data: { ...task, status: newStatus, completed_date: newStatus === 'done' ? new Date().toISOString().split('T')[0] : null }
+    });
+  };
+
+  const handleTaskStatusChange = (task, newStatus) => {
     updateTask.mutate({
       taskId: task.id,
       data: { ...task, status: newStatus, completed_date: newStatus === 'done' ? new Date().toISOString().split('T')[0] : null }
@@ -218,6 +227,10 @@ export default function ProjectDetail() {
             <ProjectFilesTab project={project} tasks={tasks} />
           )}
 
+          {moduleTab === 'reports' && (
+            <ProjectReportsTab project={project} tasks={tasks} users={users} />
+          )}
+
           {moduleTab === 'history' && (
             <ProjectHistoryTab projectId={id} />
           )}
@@ -258,6 +271,7 @@ export default function ProjectDetail() {
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
                     onAddTask={handleAddTask}
+                    onTaskStatusChange={handleTaskStatusChange}
                     users={users}
                   />
                 )}

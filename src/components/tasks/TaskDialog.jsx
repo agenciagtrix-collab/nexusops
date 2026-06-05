@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Save, X } from 'lucide-react';
+import { Plus, Trash2, Save, X, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import CommentSection from '@/components/tasks/CommentSection';
 
 const defaultStatuses = [
   { name: 'A Fazer', key: 'todo' },
@@ -223,6 +225,14 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             </Button>
           </div>
         </form>
+
+        {/* Comments — only shown for existing tasks */}
+        {isEdit && task?.id && (
+          <>
+            <Separator className="my-4" />
+            <CommentSection taskId={task.id} projectId={projectId} />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

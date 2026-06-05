@@ -11,11 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Building2, Mail, Phone, Save } from 'lucide-react';
+import { Plus, Search, Building2, Mail, Phone, Save, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export default function Clients() {
   const { onMenuToggle } = useOutletContext();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -104,7 +106,17 @@ export default function Clients() {
               {filtered.map(client => {
                 const clientProjects = projects.filter(p => p.client_id === client.id);
                 return (
-                  <Card key={client.id} className="p-5 hover:shadow-md transition-all cursor-pointer group" onClick={() => openEdit(client)}>
+                  <Card key={client.id} className="p-5 hover:shadow-md transition-all cursor-pointer group">
+                    <div className="flex justify-end -mt-1 -mr-1 mb-1 gap-1">
+                      <button
+                        onClick={() => navigate(`/clients/${client.id}`)}
+                        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        title="Ver detalhes"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div onClick={() => openEdit(client)}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="min-w-0">
                         <h3 className="font-heading font-semibold text-sm truncate group-hover:text-primary transition-colors">{client.name}</h3>
@@ -127,6 +139,7 @@ export default function Clients() {
                         <span className="text-xs text-muted-foreground">{clientProjects.length} projeto(s)</span>
                       </div>
                     )}
+                    </div>
                   </Card>
                 );
               })}
