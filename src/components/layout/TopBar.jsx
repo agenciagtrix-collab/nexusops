@@ -1,11 +1,13 @@
 import React from 'react';
-import { Bell, Menu, Plus } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function TopBar({ onMenuToggle, title, actions }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const initials = user?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
@@ -30,7 +32,7 @@ export default function TopBar({ onMenuToggle, title, actions }) {
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
         </Button>
-        <Avatar className="w-8 h-8 cursor-pointer">
+        <Avatar className="w-8 h-8 cursor-pointer" onClick={() => navigate('/profile')}>
           <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
             {initials}
           </AvatarFallback>

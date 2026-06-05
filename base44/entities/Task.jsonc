@@ -92,6 +92,21 @@
       },
       "description": "Lista de verifica\u00e7\u00e3o"
     },
+    "subtasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      },
+      "description": "Subtarefas"
+    },
     "attachments": {
       "type": "array",
       "items": {

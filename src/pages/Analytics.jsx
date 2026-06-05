@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -12,7 +13,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Legend, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
-import { FolderKanban, CheckSquare, Clock, AlertTriangle, TrendingUp, Users, Zap } from 'lucide-react';
+import { FolderKanban, CheckSquare, Clock, AlertTriangle, TrendingUp, Users, Zap, Filter } from 'lucide-react';
 import { isPast, isToday, differenceInDays, format, subMonths, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +24,8 @@ const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'
 export default function Analytics() {
   const { onMenuToggle } = useOutletContext();
   const [filterPeriod, setFilterPeriod] = useState('all');
+  const [filterProject, setFilterProject] = useState('all');
+  const [filterUser, setFilterUser] = useState('all');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -39,8 +42,10 @@ export default function Analytics() {
     queryFn: () => base44.entities.User.list('full_name', 100),
   });
 
-  // Period filter
+  // Filters
   const filteredTasks = tasks.filter(t => {
+    if (filterProject !== 'all' && t.project_id !== filterProject) return false;
+    if (filterUser !== 'all' && !t.assignee_ids?.includes(filterUser)) return false;
     if (filterPeriod === 'month') {
       if (!t.created_date) return true;
       const d = parseISO(t.created_date);
@@ -137,27 +142,55 @@ export default function Analytics() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-          {/* Period filter */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Período:</span>
-            <div className="flex gap-2">
-              {[
-                { value: 'all', label: 'Tudo' },
-                { value: 'month', label: 'Último mês' },
-                { value: 'quarter', label: 'Último trimestre' },
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setFilterPeriod(opt.value)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                    filterPeriod === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Período:</span>
+              <div className="flex gap-1.5">
+                {[
+                  { value: 'all', label: 'Tudo' },
+                  { value: 'month', label: 'Último mês' },
+                  { value: 'quarter', label: 'Último trimestre' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setFilterPeriod(opt.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                      filterPeriod === opt.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
+            <Select value={filterProject} onValueChange={setFilterProject}>
+              <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Projeto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os projetos</SelectItem>
+                {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterUser} onValueChange={setFilterUser}>
+              <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Colaborador" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os membros</SelectItem>
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(filterProject !== 'all' || filterUser !== 'all') && (
+              <button
+                onClick={() => { setFilterProject('all'); setFilterUser('all'); }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+              >
+                Limpar
+              </button>
+            )}
           </div>
 
           {/* Stats */}

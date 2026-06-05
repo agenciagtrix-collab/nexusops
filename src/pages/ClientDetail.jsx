@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import TopBar from '@/components/layout/TopBar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,10 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ArrowLeft, Building2, Mail, Phone, MapPin, FileText, FolderKanban,
-  Edit, CheckCircle2, AlertTriangle, Clock
+  Edit, CheckCircle2, AlertTriangle, Clock, Upload, Loader2, ExternalLink, Image, Film, FileSpreadsheet, File
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -27,6 +29,29 @@ export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [clientFiles, setClientFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const fileList = e.target.files;
+    if (!fileList?.length) return;
+    setUploading(true);
+    for (const file of Array.from(fileList)) {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setClientFiles(prev => [...prev, { name: file.name, url: file_url, type: file.type, size: file.size, uploaded_at: new Date().toISOString() }]);
+    }
+    toast.success('Arquivo(s) enviado(s)!');
+    setUploading(false);
+    e.target.value = '';
+  };
+
+  const getFileIcon = (type = '') => {
+    if (type.startsWith('image/')) return { Icon: Image, color: 'text-green-600', bg: 'bg-green-50' };
+    if (type.startsWith('video/')) return { Icon: Film, color: 'text-purple-600', bg: 'bg-purple-50' };
+    if (type.includes('pdf')) return { Icon: FileText, color: 'text-red-600', bg: 'bg-red-50' };
+    if (type.includes('sheet') || type.includes('excel')) return { Icon: FileSpreadsheet, color: 'text-green-700', bg: 'bg-green-50' };
+    return { Icon: File, color: 'text-blue-600', bg: 'bg-blue-50' };
+  };
 
   const { data: clients = [] } = useQuery({
     queryKey: ['client', id],
@@ -77,6 +102,8 @@ export default function ClientDetail() {
     { key: 'overview', label: 'Visão Geral' },
     { key: 'projects', label: `Projetos (${projects.length})` },
     { key: 'tasks', label: `Tarefas (${allTasks.length})` },
+    { key: 'files', label: 'Arquivos' },
+    { key: 'notes', label: 'Observações' },
   ];
 
   return (
@@ -223,6 +250,56 @@ export default function ClientDetail() {
                 ))
               )}
             </div>
+          )}
+
+          {/* Files */}
+          {activeTab === 'files' && (
+            <div className="space-y-4">
+              <label className="block border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
+                <input type="file" className="hidden" multiple onChange={handleFileUpload} />
+                {uploading ? <Loader2 className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2 animate-spin" /> : <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2" />}
+                <p className="text-sm text-muted-foreground">{uploading ? 'Enviando...' : 'Clique ou arraste arquivos para enviar'}</p>
+              </label>
+              {clientFiles.length === 0 ? (
+                <Card className="p-10 text-center">
+                  <FileText className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum arquivo enviado ainda</p>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {clientFiles.map((f, i) => {
+                    const { Icon: FIcon, color, bg } = getFileIcon(f.type);
+                    return (
+                      <a key={i} href={f.url} target="_blank" rel="noopener noreferrer">
+                        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto", bg)}>
+                            <FIcon className={cn("w-5 h-5", color)} />
+                          </div>
+                          <p className="text-xs font-medium text-center truncate">{f.name}</p>
+                        </Card>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notes */}
+          {activeTab === 'notes' && (
+            <Card className="p-5">
+              {client.notes ? (
+                <>
+                  <h3 className="font-heading font-semibold text-sm mb-3">Observações</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{client.notes}</p>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Nenhuma observação cadastrada para este cliente.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Edite o cliente para adicionar observações.</p>
+                </div>
+              )}
+            </Card>
           )}
 
           {/* Tasks */}

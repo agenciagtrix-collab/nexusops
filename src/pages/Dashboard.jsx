@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [filterClient, setFilterClient] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
+  const [filterUser, setFilterUser] = useState('all');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const filteredProjects = projects.filter(p => {
     if (filterClient !== 'all' && p.client_id !== filterClient) return false;
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+    if (filterUser !== 'all' && p.owner_id !== filterUser && !p.team_ids?.includes(filterUser)) return false;
     if (filterPeriod === 'month' && p.due_date) {
       const due = parseISO(p.due_date);
       if (!isWithinInterval(due, { start: startOfMonth(new Date()), end: endOfMonth(new Date()) })) return false;
@@ -66,6 +68,7 @@ export default function Dashboard() {
   const filteredTasks = tasks.filter(t => {
     const proj = projects.find(p => p.id === t.project_id);
     if (filterClient !== 'all' && proj?.client_id !== filterClient) return false;
+    if (filterUser !== 'all' && !t.assignee_ids?.includes(filterUser)) return false;
     return true;
   });
 
@@ -146,12 +149,21 @@ export default function Dashboard() {
                 <SelectItem value="month">Este mês</SelectItem>
               </SelectContent>
             </Select>
-            {(filterClient !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all') && (
+            <Select value={filterUser} onValueChange={setFilterUser}>
+              <SelectTrigger className="w-auto min-w-[130px] h-8 text-xs">
+                <SelectValue placeholder="Responsável" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os membros</SelectItem>
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(filterClient !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterUser !== 'all') && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 text-xs text-muted-foreground"
-                onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterPeriod('all'); }}
+                onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterPeriod('all'); setFilterUser('all'); }}
               >
                 Limpar filtros
               </Button>
