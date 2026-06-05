@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
+import CustomStatusEditor from '@/components/project/CustomStatusEditor';
 import { toast } from 'sonner';
 
 const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#6b7280'];
@@ -24,6 +25,7 @@ export default function ProjectForm() {
   const [form, setForm] = useState({
     name: '', code: '', description: '', client_id: '', priority: 'medium',
     status: 'not_started', start_date: '', due_date: '', color: '#6366f1', notes: '', tags: [],
+    custom_statuses: [],
   });
 
   const { data: project } = useQuery({
@@ -153,6 +155,19 @@ export default function ProjectForm() {
                 <Label>Observações</Label>
                 <Textarea value={form.notes} onChange={e => updateField('notes', e.target.value)} placeholder="Notas adicionais..." rows={2} />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Status Personalizados do Projeto</CardTitle>
+              <p className="text-xs text-muted-foreground">Crie os status que as tarefas deste projeto irão usar no Kanban e demais visualizações.</p>
+            </CardHeader>
+            <CardContent>
+              <CustomStatusEditor
+                value={form.custom_statuses}
+                onChange={v => updateField('custom_statuses', v)}
+              />
             </CardContent>
           </Card>
 

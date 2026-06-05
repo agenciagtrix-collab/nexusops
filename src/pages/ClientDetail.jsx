@@ -28,8 +28,8 @@ export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [clientFiles, setClientFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleFileUpload = async (e) => {
     const fileList = e.target.files;
@@ -37,8 +37,12 @@ export default function ClientDetail() {
     setUploading(true);
     for (const file of Array.from(fileList)) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setClientFiles(prev => [...prev, { name: file.name, url: file_url, type: file.type, size: file.size, uploaded_at: new Date().toISOString() }]);
+      await base44.entities.Document.create({
+        name: file.name, url: file_url, type: file.type, size: file.size,
+        client_id: id, context: 'client',
+      });
     }
+    queryClient.invalidateQueries({ queryKey: ['client-documents', id] });
     toast.success('Arquivo(s) enviado(s)!');
     setUploading(false);
     e.target.value = '';
@@ -51,6 +55,12 @@ export default function ClientDetail() {
     if (type.includes('sheet') || type.includes('excel')) return { Icon: FileSpreadsheet, color: 'text-green-700', bg: 'bg-green-50' };
     return { Icon: File, color: 'text-blue-600', bg: 'bg-blue-50' };
   };
+
+  const { data: clientDocuments = [] } = useQuery({
+    queryKey: ['client-documents', id],
+    queryFn: () => base44.entities.Document.filter({ client_id: id }, '-created_date', 100),
+    enabled: !!id,
+  });
 
   const { data: clients = [] } = useQuery({
     queryKey: ['client', id],
@@ -275,17 +285,17 @@ export default function ClientDetail() {
                 {uploading ? <Loader2 className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2 animate-spin" /> : <Upload className="w-6 h-6 text-muted-foreground/40 mx-auto mb-2" />}
                 <p className="text-sm text-muted-foreground">{uploading ? 'Enviando...' : 'Clique ou arraste arquivos para enviar'}</p>
               </label>
-              {clientFiles.length === 0 ? (
+              {clientDocuments.length === 0 ? (
                 <Card className="p-10 text-center">
                   <FileText className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground">Nenhum arquivo enviado ainda</p>
                 </Card>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {clientFiles.map((f, i) => {
+                  {clientDocuments.map((f) => {
                     const { Icon: FIcon, color, bg } = getFileIcon(f.type);
                     return (
-                      <a key={i} href={f.url} target="_blank" rel="noopener noreferrer">
+                      <a key={f.id} href={f.url} target="_blank" rel="noopener noreferrer">
                         <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
                           <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-2 mx-auto", bg)}>
                             <FIcon className={cn("w-5 h-5", color)} />

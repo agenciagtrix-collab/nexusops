@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import GlobalSearch from '@/components/layout/GlobalSearch';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -37,6 +38,7 @@ const navItems = [
 
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleLogout = () => {
     base44.auth.logout('/login');
@@ -63,15 +65,29 @@ export default function Sidebar({ collapsed, onToggle }) {
       </div>
 
       {/* Search */}
-      {!collapsed && (
+      {!collapsed ? (
         <div className="px-3 pt-4 pb-2">
-          <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors"
+          >
             <Search className="w-4 h-4" />
             <span>Buscar...</span>
             <span className="ml-auto text-xs bg-sidebar-accent px-1.5 py-0.5 rounded">⌘K</span>
           </button>
         </div>
+      ) : (
+        <div className="px-3 pt-4 pb-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="w-full flex items-center justify-center p-2 rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors"
+            title="Buscar"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        </div>
       )}
+      {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
