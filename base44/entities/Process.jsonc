@@ -1,0 +1,65 @@
+{
+  "name": "Process",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do processo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do processo"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria do processo"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "assignee_id": {
+            "type": "string"
+          },
+          "estimated_hours": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Etapas do processo"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o processo est\u00e1 ativo"
+    },
+    "runs": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de execu\u00e7\u00f5es"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

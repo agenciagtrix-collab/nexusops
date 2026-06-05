@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import TopBar from '@/components/layout/TopBar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,58 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
   Plus, GitBranch, Play, Trash2, Edit2, ChevronRight,
-  CheckCircle2, Circle, ArrowRight, Workflow, Copy, MoreVertical
+  CheckCircle2, Circle, ArrowRight, Workflow, Copy, MoreVertical, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-
-const sampleProcesses = [
-  {
-    id: '1',
-    name: 'Onboarding de Cliente',
-    description: 'Processo padrão para recepção de novos clientes',
-    category: 'comercial',
-    steps: [
-      { id: 's1', name: 'Contato inicial', description: 'Reunião de apresentação e levantamento de requisitos', order: 1 },
-      { id: 's2', name: 'Proposta comercial', description: 'Elaborar e enviar proposta ao cliente', order: 2 },
-      { id: 's3', name: 'Contrato assinado', description: 'Revisão jurídica e assinatura', order: 3 },
-      { id: 's4', name: 'Kickoff', description: 'Reunião de início do projeto com a equipe', order: 4 },
-    ],
-    runs: 12,
-    active: true,
-  },
-  {
-    id: '2',
-    name: 'Revisão de Entregável',
-    description: 'Checklist de qualidade antes de entregar ao cliente',
-    category: 'qualidade',
-    steps: [
-      { id: 's5', name: 'Revisão interna', description: 'Revisar com o time de QA', order: 1 },
-      { id: 's6', name: 'Aprovação do gestor', description: 'Validar com o responsável pelo projeto', order: 2 },
-      { id: 's7', name: 'Envio ao cliente', description: 'Entregar e aguardar feedback', order: 3 },
-    ],
-    runs: 34,
-    active: true,
-  },
-  {
-    id: '3',
-    name: 'Sprint de Desenvolvimento',
-    description: 'Fluxo ágil para sprints de 2 semanas',
-    category: 'desenvolvimento',
-    steps: [
-      { id: 's8', name: 'Planning', description: 'Definir escopo do sprint', order: 1 },
-      { id: 's9', name: 'Execução', description: 'Desenvolvimento das tasks', order: 2 },
-      { id: 's10', name: 'Code review', description: 'Revisão de código em par', order: 3 },
-      { id: 's11', name: 'Testes', description: 'QA e testes de regressão', order: 4 },
-      { id: 's12', name: 'Deploy', description: 'Publicar em produção', order: 5 },
-    ],
-    runs: 8,
-    active: false,
-  },
-];
 
 const categoryColors = {
   comercial: 'bg-blue-100 text-blue-700',
@@ -126,7 +83,7 @@ function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
 
       {/* Steps flow */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-3">
-        {process.steps.map((step, i) => (
+        {(process.steps || []).map((step, i) => (
           <React.Fragment key={step.id}>
             <div className="flex items-center gap-1.5 shrink-0">
               <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
@@ -134,7 +91,7 @@ function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
               </div>
               <span className="text-xs text-muted-foreground whitespace-nowrap">{step.name}</span>
             </div>
-            {i < process.steps.length - 1 && (
+            {i < (process.steps?.length || 0) - 1 && (
               <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
             )}
           </React.Fragment>
@@ -144,10 +101,10 @@ function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <GitBranch className="w-3 h-3" /> {process.steps.length} etapas
+            <GitBranch className="w-3 h-3" /> {process.steps?.length || 0} etapas
           </span>
           <span className="flex items-center gap-1">
-            <Play className="w-3 h-3" /> {process.runs} execuções
+            <Play className="w-3 h-3" /> {process.runs || 0} execuções
           </span>
         </div>
         <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={() => toast.info('Em breve: iniciar processo a partir de um projeto')}>
@@ -158,11 +115,15 @@ function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
   );
 }
 
-function ProcessForm({ initial, onSave, onCancel }) {
+function ProcessForm({ initial, onSave, onCancel, isSaving }) {
   const [name, setName] = useState(initial?.name || '');
   const [description, setDescription] = useState(initial?.description || '');
   const [category, setCategory] = useState(initial?.category || '');
-  const [steps, setSteps] = useState(initial?.steps || [{ id: Date.now().toString(), name: '', description: '', order: 1 }]);
+  const [steps, setSteps] = useState(
+    initial?.steps?.length
+      ? initial.steps
+      : [{ id: Date.now().toString(), name: '', description: '', order: 1 }]
+  );
 
   const addStep = () => {
     setSteps(prev => [...prev, { id: Date.now().toString(), name: '', description: '', order: prev.length + 1 }]);
@@ -179,15 +140,7 @@ function ProcessForm({ initial, onSave, onCancel }) {
   const handleSave = () => {
     if (!name.trim()) { toast.error('Nome é obrigatório'); return; }
     if (steps.some(s => !s.name.trim())) { toast.error('Todas as etapas precisam de um nome'); return; }
-    onSave({
-      id: initial?.id || Date.now().toString(),
-      name: name.trim(),
-      description,
-      category,
-      steps,
-      runs: initial?.runs || 0,
-      active: initial?.active ?? true,
-    });
+    onSave({ name: name.trim(), description, category, steps, runs: initial?.runs || 0, active: initial?.active ?? true });
   };
 
   return (
@@ -207,7 +160,6 @@ function ProcessForm({ initial, onSave, onCancel }) {
         <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva o objetivo deste processo..." rows={2} />
       </div>
 
-      {/* Steps */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label>Etapas do Processo</Label>
@@ -236,9 +188,7 @@ function ProcessForm({ initial, onSave, onCancel }) {
             </div>
             {steps.length > 1 && (
               <Button
-                type="button"
-                variant="ghost"
-                size="icon"
+                type="button" variant="ghost" size="icon"
                 className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive mt-0.5"
                 onClick={() => removeStep(step.id)}
               >
@@ -250,9 +200,10 @@ function ProcessForm({ initial, onSave, onCancel }) {
       </div>
 
       <div className="flex justify-end gap-3">
-        <Button variant="outline" size="sm" onClick={onCancel}>Cancelar</Button>
-        <Button size="sm" onClick={handleSave} className="gap-1.5">
-          <CheckCircle2 className="w-4 h-4" /> Salvar Processo
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>Cancelar</Button>
+        <Button size="sm" onClick={handleSave} disabled={isSaving} className="gap-1.5">
+          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+          Salvar Processo
         </Button>
       </div>
     </div>
@@ -261,46 +212,68 @@ function ProcessForm({ initial, onSave, onCancel }) {
 
 export default function Processes() {
   const { onMenuToggle } = useOutletContext();
-  const [processes, setProcesses] = useState(sampleProcesses);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingProcess, setEditingProcess] = useState(null);
   const [search, setSearch] = useState('');
 
-  const filtered = processes.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.description?.toLowerCase().includes(search.toLowerCase()) ||
-    p.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data: processes = [], isLoading } = useQuery({
+    queryKey: ['processes'],
+    queryFn: () => base44.entities.Process.list('-created_date', 100),
+  });
 
-  const handleSave = (proc) => {
-    if (editingProcess) {
-      setProcesses(prev => prev.map(p => p.id === proc.id ? proc : p));
-      toast.success('Processo atualizado!');
-    } else {
-      setProcesses(prev => [...prev, proc]);
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Process.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processes'] });
+      setShowForm(false);
       toast.success('Processo criado!');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Process.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processes'] });
+      setEditingProcess(null);
+      toast.success('Processo atualizado!');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Process.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processes'] });
+      toast.success('Processo removido.');
+    },
+  });
+
+  const handleSave = (data) => {
+    if (editingProcess) {
+      updateMutation.mutate({ id: editingProcess.id, data });
+    } else {
+      createMutation.mutate(data);
     }
-    setShowForm(false);
-    setEditingProcess(null);
   };
 
   const handleDuplicate = (proc) => {
-    const copy = { ...proc, id: Date.now().toString(), name: `${proc.name} (cópia)`, runs: 0 };
-    setProcesses(prev => [...prev, copy]);
+    createMutation.mutate({ ...proc, id: undefined, name: `${proc.name} (cópia)`, runs: 0 });
     toast.success('Processo duplicado!');
   };
 
   const handleToggle = (proc) => {
-    setProcesses(prev => prev.map(p => p.id === proc.id ? { ...p, active: !p.active } : p));
+    updateMutation.mutate({ id: proc.id, data: { active: !proc.active } });
   };
 
-  const handleDelete = (id) => {
-    setProcesses(prev => prev.filter(p => p.id !== id));
-    toast.success('Processo removido.');
-  };
+  const filtered = processes.filter(p =>
+    p.name?.toLowerCase().includes(search.toLowerCase()) ||
+    p.description?.toLowerCase().includes(search.toLowerCase()) ||
+    p.category?.toLowerCase().includes(search.toLowerCase())
+  );
 
   const activeCount = processes.filter(p => p.active).length;
-  const totalRuns = processes.reduce((acc, p) => acc + p.runs, 0);
+  const totalRuns = processes.reduce((acc, p) => acc + (p.runs || 0), 0);
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <>
@@ -318,7 +291,6 @@ export default function Processes() {
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-5">
 
-          {/* Info banner */}
           <Card className="p-4 bg-primary/5 border-primary/20">
             <p className="text-sm text-foreground/80">
               <strong>Processos</strong> são fluxos de trabalho reutilizáveis que podem ser aplicados a projetos e tarefas.
@@ -326,7 +298,6 @@ export default function Processes() {
             </p>
           </Card>
 
-          {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold text-primary">{processes.length}</div>
@@ -342,7 +313,6 @@ export default function Processes() {
             </Card>
           </div>
 
-          {/* Form */}
           {(showForm || editingProcess) && (
             <Card className="p-5">
               <h3 className="text-sm font-semibold mb-4">{editingProcess ? 'Editar Processo' : 'Novo Processo'}</h3>
@@ -350,11 +320,11 @@ export default function Processes() {
                 initial={editingProcess}
                 onSave={handleSave}
                 onCancel={() => { setShowForm(false); setEditingProcess(null); }}
+                isSaving={isSaving}
               />
             </Card>
           )}
 
-          {/* Search */}
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -362,15 +332,22 @@ export default function Processes() {
             className="max-w-sm"
           />
 
-          {/* List */}
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length === 0 ? (
             <Card className="p-12 text-center">
               <Workflow className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
               <h3 className="font-semibold mb-1">Nenhum processo encontrado</h3>
-              <p className="text-sm text-muted-foreground mb-4">Crie processos para padronizar o fluxo de trabalho do seu time.</p>
-              <Button size="sm" className="gap-1.5" onClick={() => setShowForm(true)}>
-                <Plus className="w-4 h-4" /> Criar Primeiro Processo
-              </Button>
+              <p className="text-sm text-muted-foreground mb-4">
+                {search ? 'Tente outro termo de busca.' : 'Crie processos para padronizar o fluxo de trabalho do seu time.'}
+              </p>
+              {!search && (
+                <Button size="sm" className="gap-1.5" onClick={() => setShowForm(true)}>
+                  <Plus className="w-4 h-4" /> Criar Primeiro Processo
+                </Button>
+              )}
             </Card>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -380,7 +357,7 @@ export default function Processes() {
                   process={process}
                   onEdit={(p) => { setEditingProcess(p); setShowForm(false); }}
                   onDuplicate={handleDuplicate}
-                  onDelete={handleDelete}
+                  onDelete={(id) => deleteMutation.mutate(id)}
                   onToggle={handleToggle}
                 />
               ))}
