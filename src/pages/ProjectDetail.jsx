@@ -8,6 +8,7 @@ import ListView from '@/components/tasks/ListView';
 import TableView from '@/components/tasks/TableView';
 import CalendarView from '@/components/tasks/CalendarView';
 import TimelineView from '@/components/tasks/TimelineView';
+import GanttView from '@/components/tasks/GanttView';
 import TaskDialog from '@/components/tasks/TaskDialog';
 import ProjectOverviewTab from '@/components/project/ProjectOverviewTab';
 import ProjectTeamTab from '@/components/project/ProjectTeamTab';
@@ -20,7 +21,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
-  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2
+  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ const taskViewItems = [
   { key: 'table', label: 'Tabela', icon: Table2 },
   { key: 'calendar', label: 'Calendário', icon: CalendarDays },
   { key: 'timeline', label: 'Timeline', icon: GitBranch },
+  { key: 'gantt', label: 'Gantt', icon: GanttChart },
 ];
 
 export default function ProjectDetail() {
@@ -305,6 +307,14 @@ export default function ProjectDetail() {
                     tasks={tasks}
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
+                  />
+                )}
+                {taskView === 'gantt' && (
+                  <GanttView
+                    tasks={tasks}
+                    statuses={project.custom_statuses}
+                    onTaskClick={handleTaskClick}
+                    users={users}
                   />
                 )}
               </Card>

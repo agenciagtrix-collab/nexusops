@@ -25,6 +25,8 @@ import SettingsPage from '@/pages/SettingsPage';
 import Documents from '@/pages/Documents';
 import CustomFields from '@/pages/CustomFields';
 import ClientDetail from '@/pages/ClientDetail';
+import Processes from '@/pages/Processes';
+import Profile from '@/pages/Profile';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -73,6 +75,8 @@ const AuthenticatedApp = () => {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/custom-fields" element={<CustomFields />} />
+          <Route path="/processes" element={<Processes />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
 

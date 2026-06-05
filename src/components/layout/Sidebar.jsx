@@ -14,7 +14,9 @@ import {
   Search,
   LogOut,
   FileText,
-  Sliders
+  Sliders,
+  Workflow,
+  UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -27,6 +29,7 @@ const navItems = [
   { icon: Users, label: 'Equipes', path: '/teams' },
   { icon: Building2, label: 'Clientes', path: '/clients' },
   { icon: FileText, label: 'Documentos', path: '/documents' },
+  { icon: Workflow, label: 'Processos', path: '/processes' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Sliders, label: 'Campos', path: '/custom-fields' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
@@ -96,6 +99,19 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       {/* Bottom */}
       <div className="px-3 py-3 border-t border-sidebar-border space-y-1">
+        <Link
+          to="/profile"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+            location.pathname === '/profile'
+              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+          title={collapsed ? 'Meu Perfil' : undefined}
+        >
+          <UserCircle className="w-5 h-5 shrink-0" />
+          {!collapsed && <span>Meu Perfil</span>}
+        </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full"

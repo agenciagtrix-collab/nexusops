@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Save, X, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, Save, X, MessageSquare, Clock, RefreshCw, Link2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import CommentSection from '@/components/tasks/CommentSection';
@@ -32,6 +33,9 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
 
   const [newCheckItem, setNewCheckItem] = useState('');
   const [newTag, setNewTag] = useState('');
+  const [newSubtask, setNewSubtask] = useState('');
+  const [logHours, setLogHours] = useState('');
+  const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
     if (task) {
@@ -43,18 +47,23 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
         start_date: task.start_date || '',
         due_date: task.due_date || '',
         estimated_hours: task.estimated_hours || '',
+        logged_hours: task.logged_hours || '',
         assignee_ids: task.assignee_ids || [],
         tags: task.tags || [],
         checklist: task.checklist || [],
+        subtasks: task.subtasks || [],
+        is_recurring: task.is_recurring || false,
+        recurrence_rule: task.recurrence_rule || '',
         project_id: projectId,
       });
     } else {
       setForm({
         title: '', description: '', status: 'todo', priority: 'medium',
         start_date: '', due_date: '', estimated_hours: '', assignee_ids: [],
-        tags: [], checklist: [], project_id: projectId,
+        tags: [], checklist: [], subtasks: [], logged_hours: '', project_id: projectId,
       });
     }
+    setActiveTab('details');
   }, [task, projectId, open]);
 
   const updateField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
@@ -81,10 +90,42 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
     setNewTag('');
   };
 
+  const saveForm = () => {
+    if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
+    onSave({
+      ...form,
+      estimated_hours: form.estimated_hours ? Number(form.estimated_hours) : undefined,
+      logged_hours: form.logged_hours ? Number(form.logged_hours) : undefined,
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
-    onSave({ ...form, estimated_hours: form.estimated_hours ? Number(form.estimated_hours) : undefined });
+    saveForm();
+  };
+
+  const addSubtask = () => {
+    if (!newSubtask.trim()) return;
+    updateField('subtasks', [...(form.subtasks || []), { text: newSubtask.trim(), done: false }]);
+    setNewSubtask('');
+  };
+
+  const toggleSubtask = (index) => {
+    const updated = [...form.subtasks];
+    updated[index].done = !updated[index].done;
+    updateField('subtasks', updated);
+  };
+
+  const removeSubtask = (index) => {
+    updateField('subtasks', form.subtasks.filter((_, i) => i !== index));
+  };
+
+  const handleLogHours = () => {
+    const h = parseFloat(logHours);
+    if (!h || h <= 0) return;
+    const current = parseFloat(form.logged_hours) || 0;
+    updateField('logged_hours', current + h);
+    setLogHours('');
   };
 
   return (
@@ -93,6 +134,17 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
         <DialogHeader>
           <DialogTitle className="font-heading">{isEdit ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
         </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-3 mb-4">
+            <TabsTrigger value="details">Detalhes</TabsTrigger>
+            <TabsTrigger value="extras">Checklist & Tags</TabsTrigger>
+            <TabsTrigger value="time" className="gap-1.5">
+              <Clock className="w-3.5 h-3.5" /> Tempo
+            </TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="details" className="mt-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Título *</Label>
@@ -172,6 +224,40 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             )}
           </div>
 
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
+            <Button type="submit" className="gap-1.5">
+              <Save className="w-4 h-4" />
+              {isEdit ? 'Salvar' : 'Criar Tarefa'}
+            </Button>
+          </div>
+        </form>
+        </TabsContent>
+
+        {/* Tab: Checklist & Tags */}
+        <TabsContent value="extras" className="mt-0 space-y-4">
+          {/* Subtarefas */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5"><Link2 className="w-4 h-4" /> Subtarefas</Label>
+            <div className="flex gap-2">
+              <Input value={newSubtask} onChange={e => setNewSubtask(e.target.value)} placeholder="Nova subtarefa" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSubtask(); } }} />
+              <Button type="button" variant="outline" size="sm" onClick={addSubtask}><Plus className="w-4 h-4" /></Button>
+            </div>
+            {(form.subtasks || []).length > 0 && (
+              <div className="space-y-1.5 mt-2">
+                {form.subtasks.map((sub, i) => (
+                  <div key={i} className="flex items-center gap-2 group">
+                    <Checkbox checked={sub.done} onCheckedChange={() => toggleSubtask(i)} />
+                    <span className={`text-sm flex-1 ${sub.done ? 'line-through text-muted-foreground' : ''}`}>{sub.text}</span>
+                    <button type="button" onClick={() => removeSubtask(i)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Tags */}
           <div className="space-y-2">
             <Label>Tags</Label>
@@ -217,14 +303,103 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             )}
           </div>
 
+          {/* Recorrência */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5"><RefreshCw className="w-4 h-4" /> Recorrência</Label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => updateField('is_recurring', !form.is_recurring)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.is_recurring ? 'bg-primary' : 'bg-muted'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.is_recurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </button>
+              <span className="text-sm">{form.is_recurring ? 'Ativada' : 'Desativada'}</span>
+            </div>
+            {form.is_recurring && (
+              <Input
+                value={form.recurrence_rule}
+                onChange={e => updateField('recurrence_rule', e.target.value)}
+                placeholder="Ex: Toda segunda-feira, Mensalmente..."
+              />
+            )}
+          </div>
+
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
-            <Button type="submit" className="gap-1.5">
+            <Button type="button" className="gap-1.5" onClick={saveForm}>
               <Save className="w-4 h-4" />
               {isEdit ? 'Salvar' : 'Criar Tarefa'}
             </Button>
           </div>
-        </form>
+        </TabsContent>
+
+        {/* Tab: Tempo */}
+        <TabsContent value="time" className="mt-0 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-muted/40 rounded-xl text-center">
+              <div className="text-2xl font-bold text-primary">{form.estimated_hours || 0}h</div>
+              <div className="text-xs text-muted-foreground mt-1">Estimado</div>
+            </div>
+            <div className="p-4 bg-muted/40 rounded-xl text-center">
+              <div className="text-2xl font-bold">{parseFloat(form.logged_hours || 0).toFixed(1)}h</div>
+              <div className="text-xs text-muted-foreground mt-1">Executado</div>
+            </div>
+          </div>
+
+          {form.estimated_hours > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Progresso de horas</span>
+                <span>{Math.min(100, Math.round(((parseFloat(form.logged_hours) || 0) / form.estimated_hours) * 100))}%</span>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${Math.min(100, ((parseFloat(form.logged_hours) || 0) / form.estimated_hours) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> Registrar Horas</Label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                step="0.25"
+                min="0.25"
+                value={logHours}
+                onChange={e => setLogHours(e.target.value)}
+                placeholder="Ex: 1.5"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={handleLogHours} className="shrink-0">
+                + Adicionar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Informe as horas trabalhadas nesta tarefa</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Horas Estimadas</Label>
+            <Input
+              type="number"
+              value={form.estimated_hours}
+              onChange={e => updateField('estimated_hours', e.target.value)}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
+            <Button type="button" className="gap-1.5" onClick={saveForm}>
+              <Save className="w-4 h-4" />
+              {isEdit ? 'Salvar' : 'Criar Tarefa'}
+            </Button>
+          </div>
+        </TabsContent>
+
+        </Tabs>
 
         {/* Comments — only shown for existing tasks */}
         {isEdit && task?.id && (
