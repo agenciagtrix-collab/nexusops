@@ -97,6 +97,7 @@ export default function AIAgentChat() {
   const [councilProgress, setCouncilProgress] = useState([]);
   const [showContextPanel, setShowContextPanel] = useState(true);
   const [showAgentSwitcher, setShowAgentSwitcher] = useState(false);
+  const [showMobileContext, setShowMobileContext] = useState(false);
 
   const { data: agents = [] } = useQuery({
     queryKey: ['ai-agents-active'],
@@ -463,22 +464,53 @@ Seja executivo, direto e decisivo.`;
             onToggleCouncil={() => setIsCouncilMode(s => !s)}
             onOpenAgentSwitcher={() => setShowAgentSwitcher(true)}
             hasProject={!!selectedProjectId}
+            onInsertContext={(type) => {
+              if (type === 'project' && projectData) {
+                setInput(prev => prev + `\n[Contexto: Projeto "${projectData.name}" - Status: ${projectData.status || 'N/A'}, Progresso: ${projectTasks.length > 0 ? Math.round((projectTasks.filter(t=>t.status==='done').length/projectTasks.length)*100) : 0}%]`);
+              } else if (type === 'tasks' && projectTasks.length > 0) {
+                const done = projectTasks.filter(t=>t.status==='done').length;
+                const overdue = projectTasks.filter(t=>t.due_date && new Date(t.due_date)<new Date() && t.status!=='done').length;
+                setInput(prev => prev + `\n[Tarefas: ${projectTasks.length} total, ${done} concluídas, ${overdue} atrasadas]`);
+              }
+            }}
           />
         </div>
 
-        {/* CONTEXT PANEL */}
+        {/* CONTEXT PANEL — Desktop */}
         {showContextPanel && (
-          <ChatProjectPanel
-            project={projectData}
-            tasks={projectTasks}
-            memories={projectMemories}
-            alerts={alerts}
-            agents={selectedAgents}
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-            onSelectProject={setSelectedProjectId}
-            onClose={() => setShowContextPanel(false)}
-          />
+          <div className="hidden md:flex">
+            <ChatProjectPanel
+              project={projectData}
+              tasks={projectTasks}
+              memories={projectMemories}
+              alerts={alerts}
+              agents={selectedAgents}
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={setSelectedProjectId}
+              onClose={() => setShowContextPanel(false)}
+            />
+          </div>
+        )}
+
+        {/* CONTEXT PANEL — Mobile Drawer */}
+        {showContextPanel && (
+          <div className="md:hidden fixed inset-0 z-50 flex">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowContextPanel(false)} />
+            <div className="absolute right-0 top-0 bottom-0 w-80 max-w-[90vw] flex">
+              <ChatProjectPanel
+                project={projectData}
+                tasks={projectTasks}
+                memories={projectMemories}
+                alerts={alerts}
+                agents={selectedAgents}
+                projects={projects}
+                selectedProjectId={selectedProjectId}
+                onSelectProject={setSelectedProjectId}
+                onClose={() => setShowContextPanel(false)}
+              />
+            </div>
+          </div>
         )}
       </div>
     </>
