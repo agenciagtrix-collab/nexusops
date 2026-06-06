@@ -41,19 +41,19 @@ export default function ChatAgentHeader({
 
   return (
     <div className="border-b border-border bg-card">
-      <div className="px-4 py-3 flex items-center gap-3">
+      <div className="px-4 py-3 flex items-center gap-3 min-w-0 overflow-hidden">
         {/* Avatar(s) */}
         {isCouncilMode ? (
-          <div className="flex -space-x-2">
-            {agents.slice(0, 4).map((a, i) => (
+          <div className="flex -space-x-2 flex-shrink-0">
+            {agents.slice(0, 3).map((a, i) => (
               <div key={a.id}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-base border-2 border-background shadow-sm"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm border-2 border-background shadow-sm"
                 style={{ backgroundColor: a.avatar_color || '#6366f1', zIndex: 10 - i }}>
                 {a.avatar_emoji || '🤖'}
               </div>
             ))}
-            <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center border-2 border-background">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center border-2 border-background flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
           </div>
         ) : (
@@ -64,16 +64,16 @@ export default function ChatAgentHeader({
         )}
 
         {/* Agent Info */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden">
           {isCouncilMode ? (
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold">Conselho de Especialistas</p>
-                <Badge className="text-[10px] bg-violet-50 text-violet-700 border-violet-200">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="text-sm font-bold whitespace-nowrap">Conselho de Especialistas</p>
+                <Badge className="text-[10px] bg-violet-50 text-violet-700 border-violet-200 flex-shrink-0">
                   {agents.length} agentes
                 </Badge>
               </div>
-              <p className="text-[11px] text-muted-foreground truncate">
+              <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">
                 {agents.map(a => a.name).join(' · ')}
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function ChatAgentHeader({
         </div>
 
         {/* Context chips */}
-        <div className="hidden md:flex items-center gap-1.5">
+        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
           {/* Project chip */}
           <div className="relative">
             <button
