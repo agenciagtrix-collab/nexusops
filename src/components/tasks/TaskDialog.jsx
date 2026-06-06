@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, Save, X, MessageSquare, Clock, RefreshCw, Link2, GitMerge } from 'lucide-react';
 import DependencySelector from '@/components/tasks/DependencySelector';
+import TaskHistoryTab from '@/components/tasks/TaskHistoryTab';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
@@ -137,7 +138,7 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 mb-4">
+          <TabsList className={`w-full grid mb-4 ${isEdit ? 'grid-cols-5' : 'grid-cols-4'}`}>
             <TabsTrigger value="details">Detalhes</TabsTrigger>
             <TabsTrigger value="extras">Checklist</TabsTrigger>
             <TabsTrigger value="time" className="gap-1">
@@ -146,6 +147,11 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             <TabsTrigger value="deps" className="gap-1">
               <GitMerge className="w-3 h-3" /> Deps
             </TabsTrigger>
+            {isEdit && (
+              <TabsTrigger value="history" className="gap-1">
+                <RefreshCw className="w-3 h-3" /> Histórico
+              </TabsTrigger>
+            )}
           </TabsList>
 
         <TabsContent value="details" className="mt-0">
@@ -419,6 +425,13 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             </Button>
           </div>
         </TabsContent>
+
+        {/* Tab: History */}
+        {isEdit && (
+          <TabsContent value="history" className="mt-0">
+            <TaskHistoryTab taskId={task?.id} />
+          </TabsContent>
+        )}
 
         </Tabs>
 

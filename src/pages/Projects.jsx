@@ -1,3 +1,4 @@
+import { usePermissions } from '@/hooks/usePermissions';
 import React, { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -33,6 +34,7 @@ const priorityLabels = { low: 'Baixa', medium: 'Média', high: 'Alta', urgent: '
 
 export default function Projects() {
   const { onMenuToggle } = useOutletContext();
+  const { canCreate } = usePermissions();
   const [search, setSearch] = useState('');
 
   const { data: projects = [], isLoading } = useQuery({
@@ -51,12 +53,14 @@ export default function Projects() {
         onMenuToggle={onMenuToggle}
         title="Projetos"
         actions={
-          <Link to="/projects/new">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Novo Projeto</span>
-            </Button>
-          </Link>
+          canCreate && (
+            <Link to="/projects/new">
+              <Button size="sm" className="gap-1.5">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Novo Projeto</span>
+              </Button>
+            </Link>
+          )
         }
       />
 

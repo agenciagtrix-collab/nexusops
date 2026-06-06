@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const moduleTabItems = [
   { key: 'overview', label: 'Visão Geral', icon: Eye },
@@ -51,6 +52,7 @@ export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { canCreate, canDelete } = usePermissions();
   const [moduleTab, setModuleTab] = useState('overview');
   const [taskView, setTaskView] = useState('kanban');
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -130,6 +132,21 @@ export default function ProjectDetail() {
       taskId: task.id,
       data: { ...task, status: newStatus, completed_date: newStatus === 'done' ? new Date().toISOString().split('T')[0] : null }
     });
+  };
+
+  const deleteTask = useMutation({
+    mutationFn: (taskId) => base44.entities.Task.delete(taskId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', id] }),
+  });
+
+  const handleBulkUpdate = (taskId, data) => {
+    updateTask.mutate({ taskId, data });
+  };
+
+  const handleBulkDelete = (taskIds) => {
+    if (!canDelete) { toast.error('Sem permissão para excluir tarefas'); return; }
+    taskIds.forEach(taskId => deleteTask.mutate(taskId));
+    toast.success(`${taskIds.length} tarefa(s) excluída(s)`);
   };
 
   const completedCount = tasks.filter(t => t.status === 'done').length;
@@ -298,6 +315,8 @@ export default function ProjectDetail() {
                     onTaskClick={handleTaskClick}
                     onToggleComplete={handleToggleComplete}
                     onAddTask={handleAddTask}
+                    onBulkUpdate={handleBulkUpdate}
+                    onBulkDelete={canDelete ? handleBulkDelete : undefined}
                     users={users}
                   />
                 )}

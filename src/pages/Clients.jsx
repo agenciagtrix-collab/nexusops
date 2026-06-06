@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -17,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Clients() {
   const { onMenuToggle } = useOutletContext();
+  const { canCreate } = usePermissions();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -80,10 +82,12 @@ export default function Clients() {
         onMenuToggle={onMenuToggle}
         title="Clientes"
         actions={
-          <Button size="sm" className="gap-1.5" onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Novo Cliente</span>
-          </Button>
+          canCreate && (
+            <Button size="sm" className="gap-1.5" onClick={openNew}>
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Novo Cliente</span>
+            </Button>
+          )
         }
       />
 
