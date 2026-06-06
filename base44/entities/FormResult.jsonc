@@ -1,0 +1,99 @@
+{
+  "name": "FormResult",
+  "type": "object",
+  "properties": {
+    "form_id": {
+      "type": "string",
+      "description": "ID do formul\u00e1rio"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da p\u00e1gina de resultado"
+    },
+    "description": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "default",
+        "score_based",
+        "logic_based",
+        "custom"
+      ],
+      "default": "default"
+    },
+    "condition": {
+      "type": "object",
+      "description": "Condi\u00e7\u00e3o para exibir este resultado",
+      "properties": {
+        "scoreMin": {
+          "type": "number"
+        },
+        "scoreMax": {
+          "type": "number"
+        },
+        "logic": {
+          "type": "string"
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "description": "Conte\u00fado exibido",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "video": {
+          "type": "string"
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "description": "Pr\u00f3ximos passos/a\u00e7\u00f5es",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "link",
+              "email",
+              "project",
+              "client",
+              "download"
+            ]
+          },
+          "target": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "triggerAutomation": {
+      "type": "string",
+      "description": "ID da automa\u00e7\u00e3o a acionar"
+    },
+    "order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "form_id",
+    "title"
+  ]
+}

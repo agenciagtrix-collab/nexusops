@@ -1,0 +1,77 @@
+{
+  "name": "FormResponse",
+  "type": "object",
+  "properties": {
+    "form_id": {
+      "type": "string",
+      "description": "ID do formul\u00e1rio"
+    },
+    "respondent_id": {
+      "type": "string",
+      "description": "ID do respondente (user_id ou an\u00f4nimo)"
+    },
+    "respondent_email": {
+      "type": "string"
+    },
+    "respondent_name": {
+      "type": "string"
+    },
+    "responses": {
+      "type": "object",
+      "description": "Respostas: { fieldId: valor }"
+    },
+    "score": {
+      "type": "number",
+      "description": "Pontua\u00e7\u00e3o total (para quiz)"
+    },
+    "result_id": {
+      "type": "string",
+      "description": "ID do resultado obtido"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "viewed"
+      ],
+      "default": "draft"
+    },
+    "completionTime": {
+      "type": "number",
+      "description": "Tempo em segundos"
+    },
+    "ipAddress": {
+      "type": "string"
+    },
+    "userAgent": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "description": "Origem: direct, project, client_portal, email, qr_code"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Projeto criado a partir da resposta"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Cliente criado a partir da resposta"
+    },
+    "automation_triggered": {
+      "type": "array",
+      "description": "IDs de automa\u00e7\u00f5es acionadas",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "form_id",
+    "responses"
+  ]
+}

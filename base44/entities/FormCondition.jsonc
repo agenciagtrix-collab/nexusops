@@ -1,0 +1,67 @@
+{
+  "name": "FormCondition",
+  "type": "object",
+  "properties": {
+    "form_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nome da condi\u00e7\u00e3o"
+    },
+    "trigger_field_id": {
+      "type": "string",
+      "description": "ID do campo que dispara a condi\u00e7\u00e3o"
+    },
+    "operator": {
+      "type": "string",
+      "enum": [
+        "equals",
+        "not_equals",
+        "contains",
+        "gt",
+        "lt",
+        "gte",
+        "lte",
+        "is_checked"
+      ],
+      "description": "Operador de compara\u00e7\u00e3o"
+    },
+    "value": {
+      "type": "string",
+      "description": "Valor para comparar"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "show",
+        "hide",
+        "skip",
+        "require",
+        "calculate"
+      ],
+      "description": "A\u00e7\u00e3o a executar"
+    },
+    "target_field_id": {
+      "type": "string",
+      "description": "ID do campo afetado"
+    },
+    "target_page": {
+      "type": "string",
+      "description": "P\u00e1gina para pular para"
+    },
+    "jumpDestination": {
+      "type": "string",
+      "description": "Destino do skip (field_id ou result_id)"
+    },
+    "order": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "form_id",
+    "trigger_field_id",
+    "operator",
+    "action"
+  ]
+}

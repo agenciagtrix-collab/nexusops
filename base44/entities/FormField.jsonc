@@ -1,0 +1,124 @@
+{
+  "name": "FormField",
+  "type": "object",
+  "properties": {
+    "form_id": {
+      "type": "string",
+      "description": "ID do formul\u00e1rio pai"
+    },
+    "label": {
+      "type": "string",
+      "description": "R\u00f3tulo/pergunta"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "short_text",
+        "long_text",
+        "number",
+        "date",
+        "time",
+        "datetime",
+        "email",
+        "phone",
+        "url",
+        "currency",
+        "file",
+        "image",
+        "video",
+        "signature",
+        "checkbox",
+        "multiple_choice",
+        "single_choice",
+        "dropdown",
+        "scale",
+        "nps",
+        "rating",
+        "matrix",
+        "custom"
+      ],
+      "description": "Tipo de campo"
+    },
+    "required": {
+      "type": "boolean",
+      "default": false
+    },
+    "placeholder": {
+      "type": "string"
+    },
+    "helpText": {
+      "type": "string"
+    },
+    "options": {
+      "type": "array",
+      "description": "Op\u00e7\u00f5es para choice/dropdown/etc",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "resultId": {
+            "type": "string"
+          },
+          "points": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "minLength": {
+          "type": "number"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "minValue": {
+          "type": "number"
+        },
+        "maxValue": {
+          "type": "number"
+        }
+      }
+    },
+    "order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o"
+    },
+    "conditional": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o campo tem condi\u00e7\u00e3o"
+    },
+    "logic": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de FormCondition"
+    },
+    "pageBreak": {
+      "type": "boolean",
+      "default": false,
+      "description": "Quebra de p\u00e1gina"
+    }
+  },
+  "required": [
+    "form_id",
+    "label",
+    "type",
+    "order"
+  ]
+}

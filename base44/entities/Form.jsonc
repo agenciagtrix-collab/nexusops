@@ -1,0 +1,172 @@
+{
+  "name": "Form",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do formul\u00e1rio"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do formul\u00e1rio"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "form",
+        "survey",
+        "quiz",
+        "questionnaire",
+        "diagnostic",
+        "intake"
+      ],
+      "default": "form",
+      "description": "Tipo de formul\u00e1rio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused",
+        "closed"
+      ],
+      "default": "draft"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji ou \u00edcone"
+    },
+    "color": {
+      "type": "string",
+      "description": "Cor prim\u00e1ria (#hex)"
+    },
+    "fields": {
+      "type": "array",
+      "description": "Array de IDs de FormField",
+      "items": {
+        "type": "string"
+      }
+    },
+    "theme": {
+      "type": "object",
+      "description": "Configura\u00e7\u00f5es de tema",
+      "properties": {
+        "background": {
+          "type": "string"
+        },
+        "layout": {
+          "type": "string",
+          "enum": [
+            "single",
+            "multi",
+            "progressive"
+          ]
+        },
+        "progressBar": {
+          "type": "boolean"
+        }
+      }
+    },
+    "logic": {
+      "type": "array",
+      "description": "Array de IDs de FormCondition",
+      "items": {
+        "type": "string"
+      }
+    },
+    "results": {
+      "type": "array",
+      "description": "Array de IDs de FormResult",
+      "items": {
+        "type": "string"
+      }
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Projeto vinculado (opcional)"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Cliente vinculado (opcional)"
+    },
+    "template_id": {
+      "type": "string",
+      "description": "Template usado (opcional)"
+    },
+    "sharing": {
+      "type": "object",
+      "properties": {
+        "public": {
+          "type": "boolean"
+        },
+        "publicToken": {
+          "type": "string"
+        },
+        "allowEmbed": {
+          "type": "boolean"
+        },
+        "allowClientPortal": {
+          "type": "boolean"
+        },
+        "customDomain": {
+          "type": "string"
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "captureEmail": {
+          "type": "boolean"
+        },
+        "captureIdentification": {
+          "type": "boolean"
+        },
+        "requireLogin": {
+          "type": "boolean"
+        },
+        "limitResponses": {
+          "type": "boolean"
+        },
+        "responseLimit": {
+          "type": "number"
+        },
+        "showProgressBar": {
+          "type": "boolean"
+        },
+        "allowMultipleResponses": {
+          "type": "boolean"
+        }
+      }
+    },
+    "automation_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Automa\u00e7\u00f5es acionadas ao responder"
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "views": {
+          "type": "number"
+        },
+        "responses": {
+          "type": "number"
+        },
+        "avgCompletionTime": {
+          "type": "number"
+        },
+        "conversionRate": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "title",
+    "type"
+  ]
+}

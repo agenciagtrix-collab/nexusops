@@ -1,0 +1,77 @@
+{
+  "name": "FormTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do template"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "briefing",
+        "survey",
+        "nps",
+        "onboarding",
+        "assessment",
+        "internal_research",
+        "diagnostic",
+        "lead_capture",
+        "intake",
+        "audit",
+        "checklist",
+        "feedback",
+        "application",
+        "registration"
+      ],
+      "description": "Categoria do template"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "thumbnail": {
+      "type": "string",
+      "description": "URL da imagem de preview"
+    },
+    "fields": {
+      "type": "array",
+      "description": "Campos pr\u00e9-configurados",
+      "items": {
+        "type": "object"
+      }
+    },
+    "logic": {
+      "type": "array",
+      "description": "L\u00f3gica pr\u00e9-configurada",
+      "items": {
+        "type": "object"
+      }
+    },
+    "results": {
+      "type": "array",
+      "description": "P\u00e1ginas de resultado",
+      "items": {
+        "type": "object"
+      }
+    },
+    "theme": {
+      "type": "object"
+    },
+    "uses": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantas vezes foi usado"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "category"
+  ]
+}

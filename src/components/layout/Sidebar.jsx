@@ -24,6 +24,7 @@ import {
   ScrollText,
   Keyboard,
   Brain,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,11 @@ const navItems = [
   { icon: Users, label: 'Equipes', path: '/teams' },
   { icon: Building2, label: 'Clientes', path: '/clients' },
   { icon: FileText, label: 'Documentos', path: '/documents' },
+  { icon: ClipboardList, label: 'Formulários', path: '/forms', submenu: [
+    { label: 'Todos', path: '/forms' },
+    { label: 'Templates', path: '/form-templates' },
+    { label: 'IA Criadora', path: '/form-ai-creator' },
+  ]},
   { icon: Workflow, label: 'Processos', path: '/processes' },
   { icon: Zap, label: 'Automações', path: '/automation-builder' },
   { icon: ScrollText, label: 'Contratos', path: '/contracts' },
@@ -50,6 +56,7 @@ const navItems = [
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [expandedMenu, setExpandedMenu] = useState(null);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
@@ -107,21 +114,61 @@ export default function Sidebar({ collapsed, onToggle }) {
         {navItems.map((item) => {
           const isActive = location.pathname === item.path ||
             (item.path !== '/' && location.pathname.startsWith(item.path));
+          const hasSubmenu = item.submenu && !collapsed;
+          const isExpanded = expandedMenu === item.path;
+          
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            <div key={item.path}>
+              {hasSubmenu ? (
+                <>
+                  <button
+                    onClick={() => setExpandedMenu(isExpanded ? null : item.path)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    )}
+                  >
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    <ChevronRight className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-90")} />
+                  </button>
+                  {isExpanded && (
+                    <div className="pl-3 mt-1 space-y-1">
+                      {item.submenu.map((sub) => (
+                        <Link
+                          key={sub.path}
+                          to={sub.path}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ml-2 border-l-2",
+                            location.pathname === sub.path
+                              ? "border-sidebar-primary text-sidebar-primary bg-sidebar-primary/10"
+                              : "border-sidebar-border text-sidebar-foreground/60 hover:bg-sidebar-accent"
+                          )}
+                        >
+                          <span>{sub.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
               )}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
+            </div>
           );
         })}
       </nav>
