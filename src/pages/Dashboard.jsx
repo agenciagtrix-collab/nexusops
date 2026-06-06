@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FolderKanban, CheckSquare, AlertTriangle, Users, Plus, TrendingUp, Clock, Calendar, Settings2 } from 'lucide-react';
+import AIInsightsPanel from '@/components/ai/AIInsightsPanel';
 import DashboardCustomizer, { loadWidgets, saveWidgets } from '@/components/dashboard/DashboardCustomizer';
 import { isPast, isToday, isThisWeek, isThisMonth, format, startOfMonth, endOfMonth, isWithinInterval, parseISO, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -318,6 +319,12 @@ export default function Dashboard() {
             </div>
             <div className="space-y-6">
               {isVisible('upcoming') && <UpcomingDeadlines tasks={filteredTasks} />}
+
+              {/* AI Insights */}
+              <Card className="p-5">
+                <AIInsightsPanel />
+              </Card>
+
               {isVisible('activity') && <RecentActivity activities={activities} />}
             </div>
           </div>

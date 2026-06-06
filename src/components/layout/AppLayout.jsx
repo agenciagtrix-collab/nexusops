@@ -2,10 +2,21 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { cn } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useTheme } from '@/hooks/useTheme';
+import KeyboardShortcutsPanel from '@/components/shortcuts/KeyboardShortcutsPanel';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Initialize theme from user preferences
+  useTheme();
+
+  useKeyboardShortcuts({
+    onShowHelp: () => setShowShortcuts(true),
+  });
 
   return (
     <div className="h-screen flex overflow-hidden bg-background">
@@ -38,6 +49,8 @@ export default function AppLayout() {
       )}>
         <Outlet context={{ onMenuToggle: () => setMobileOpen(!mobileOpen) }} />
       </main>
+
+      <KeyboardShortcutsPanel open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
   );
 }

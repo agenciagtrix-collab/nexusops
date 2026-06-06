@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   Zap,
   LayoutTemplate,
-  ScrollText
+  ScrollText,
+  Keyboard
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ const navItems = [
   { icon: Building2, label: 'Clientes', path: '/clients' },
   { icon: FileText, label: 'Documentos', path: '/documents' },
   { icon: Workflow, label: 'Processos', path: '/processes' },
-  { icon: Zap, label: 'Automações', path: '/automations' },
+  { icon: Zap, label: 'Automações', path: '/automation-builder' },
   { icon: ScrollText, label: 'Contratos', path: '/contracts' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Sliders, label: 'Campos', path: '/custom-fields' },
@@ -165,6 +166,12 @@ export default function Sidebar({ collapsed, onToggle }) {
           <LogOut className="w-5 h-5 shrink-0" />
           {!collapsed && <span>Sair</span>}
         </button>
+        {!collapsed && (
+          <div className="flex items-center gap-2 px-3 py-1.5 text-[10px] text-sidebar-foreground/40">
+            <Keyboard className="w-3 h-3" />
+            <span>Pressione <kbd className="bg-sidebar-accent px-1 rounded text-[9px]">?</kbd> para atalhos</span>
+          </div>
+        )}
         <button
           onClick={onToggle}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full"

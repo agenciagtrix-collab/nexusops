@@ -29,6 +29,7 @@ import Processes from '@/pages/Processes';
 import Profile from '@/pages/Profile';
 import SuperAdminPanel from '@/pages/SuperAdminPanel';
 import Automations from '@/pages/Automations';
+import AutomationBuilder from '@/pages/AutomationBuilder';
 import ProjectTemplates from '@/pages/ProjectTemplates';
 import Contracts from '@/pages/Contracts';
 
@@ -83,6 +84,7 @@ const AuthenticatedApp = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<SuperAdminPanel />} />
           <Route path="/automations" element={<Automations />} />
+          <Route path="/automation-builder" element={<AutomationBuilder />} />
           <Route path="/templates" element={<ProjectTemplates />} />
           <Route path="/contracts" element={<Contracts />} />
         </Route>

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Crown, User, UserPlus } from 'lucide-react';
+import { Mail, Crown, User, UserPlus, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ProjectPermissionsManager from '@/components/permissions/ProjectPermissionsManager';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const roleLabels = {
   admin: { label: 'Administrador', class: 'bg-primary/10 text-primary' },
@@ -58,6 +60,8 @@ function MemberCard({ user, isOwner, tasks = [] }) {
 }
 
 export default function ProjectTeamTab({ project, users = [], tasks = [] }) {
+  const { isAdmin } = usePermissions();
+  const [showPermissions, setShowPermissions] = useState(false);
   const owner = users.find(u => u.id === project.owner_id);
   const teamMembers = (project.team_ids || []).map(id => users.find(u => u.id === id)).filter(Boolean);
 
@@ -72,9 +76,26 @@ export default function ProjectTeamTab({ project, users = [], tasks = [] }) {
           <h3 className="text-base font-heading font-semibold">Equipe do Projeto</h3>
           <p className="text-sm text-muted-foreground">{allMembers.length} membros</p>
         </div>
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setShowPermissions(!showPermissions)}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            {showPermissions ? 'Ver Membros' : 'Permissões'}
+          </Button>
+        )}
       </div>
 
-      {allMembers.length === 0 ? (
+      {showPermissions && isAdmin ? (
+        <ProjectPermissionsManager
+          projectId={project.id}
+          users={allMembers.length > 0 ? allMembers : users}
+          isAdmin={isAdmin}
+        />
+      ) : allMembers.length === 0 ? (
         <Card className="p-12 text-center">
           <User className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhum membro adicionado ao projeto.</p>
