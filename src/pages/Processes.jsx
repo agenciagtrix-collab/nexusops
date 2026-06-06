@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import TopBar from '@/components/layout/TopBar';
@@ -11,8 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
   Plus, GitBranch, Play, Trash2, Edit2, ChevronRight,
-  CheckCircle2, Circle, ArrowRight, Workflow, Copy, MoreVertical, Loader2
+  CheckCircle2, Circle, ArrowRight, Workflow, Copy, MoreVertical, Loader2, FolderKanban
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -107,8 +109,9 @@ function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
             <Play className="w-3 h-3" /> {process.runs || 0} execuções
           </span>
         </div>
-        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={() => toast.info('Em breve: iniciar processo a partir de um projeto')}>
-          <Play className="w-3 h-3" /> Usar
+        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5"
+          onClick={() => { setUseProcess(process); setSelectedProjectId(''); setUseDialogOpen(true); }}>
+          <FolderKanban className="w-3 h-3" /> Usar em Projeto
         </Button>
       </div>
     </Card>
@@ -212,14 +215,54 @@ function ProcessForm({ initial, onSave, onCancel, isSaving }) {
 
 export default function Processes() {
   const { onMenuToggle } = useOutletContext();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingProcess, setEditingProcess] = useState(null);
   const [search, setSearch] = useState('');
+  const [useDialogOpen, setUseDialogOpen] = useState(false);
+  const [useProcess, setUseProcess] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
 
   const { data: processes = [], isLoading } = useQuery({
     queryKey: ['processes'],
     queryFn: () => base44.entities.Process.list('-created_date', 100),
+  });
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name', 100),
+  });
+
+  const applyProcessMut = useMutation({
+    mutationFn: async ({ process, projectId }) => {
+      const groups = {};
+      for (const step of (process.steps || [])) {
+        const g = await base44.entities.TaskGroup.create({ name: step.name, project_id: projectId, order: step.order });
+        groups[step.id] = g.id;
+      }
+      for (const step of (process.steps || [])) {
+        await base44.entities.Task.create({
+          title: step.name,
+          description: step.description || '',
+          project_id: projectId,
+          group_id: groups[step.id] || '',
+          status: 'todo',
+          priority: 'medium',
+          estimated_hours: step.estimated_hours,
+        });
+      }
+      await base44.entities.Process.update(process.id, { runs: (process.runs || 0) + 1 });
+      return projectId;
+    },
+    onSuccess: (projectId) => {
+      queryClient.invalidateQueries({ queryKey: ['processes'] });
+      setUseDialogOpen(false);
+      setUseProcess(null);
+      setSelectedProjectId('');
+      toast.success('Processo aplicado ao projeto!');
+      navigate(`/projects/${projectId}`);
+    },
   });
 
   const createMutation = useMutation({
@@ -365,6 +408,39 @@ export default function Processes() {
           )}
         </div>
       </div>
+      {/* Use Process Dialog */}
+      <Dialog open={useDialogOpen} onOpenChange={setUseDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Aplicar Processo a Projeto</DialogTitle>
+          </DialogHeader>
+          {useProcess && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium">{useProcess.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{useProcess.steps?.length || 0} etapas serão criadas como grupos e tarefas</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Projeto destino</Label>
+                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um projeto" /></SelectTrigger>
+                  <SelectContent>
+                    {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setUseDialogOpen(false)}>Cancelar</Button>
+                <Button className="flex-1 gap-1.5"
+                  disabled={!selectedProjectId || applyProcessMut.isPending}
+                  onClick={() => applyProcessMut.mutate({ process: useProcess, projectId: selectedProjectId })}>
+                  {applyProcessMut.isPending ? 'Aplicando...' : 'Aplicar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

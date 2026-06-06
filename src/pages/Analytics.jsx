@@ -25,6 +25,7 @@ export default function Analytics() {
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterProject, setFilterProject] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
+  const [filterTeam, setFilterTeam] = useState('all');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -45,6 +46,10 @@ export default function Analytics() {
   const filteredTasks = tasks.filter(t => {
     if (filterProject !== 'all' && t.project_id !== filterProject) return false;
     if (filterUser !== 'all' && !t.assignee_ids?.includes(filterUser)) return false;
+    if (filterTeam !== 'all') {
+      const proj = projects.find(p => p.id === t.project_id);
+      if (!proj?.team_ids?.includes(filterTeam)) return false;
+    }
     if (filterPeriod === 'month') {
       if (!t.created_date) return true;
       const d = parseISO(t.created_date);
@@ -182,9 +187,18 @@ export default function Analytics() {
                 {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}
               </SelectContent>
             </Select>
-            {(filterProject !== 'all' || filterUser !== 'all') && (
+            <Select value={filterTeam} onValueChange={setFilterTeam}>
+              <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Equipe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as equipes</SelectItem>
+                {users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(filterProject !== 'all' || filterUser !== 'all' || filterTeam !== 'all') && (
               <button
-                onClick={() => { setFilterProject('all'); setFilterUser('all'); }}
+                onClick={() => { setFilterProject('all'); setFilterUser('all'); setFilterTeam('all'); }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
               >
                 Limpar

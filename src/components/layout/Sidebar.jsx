@@ -20,7 +20,8 @@ import {
   UserCircle,
   ShieldCheck,
   Zap,
-  LayoutTemplate
+  LayoutTemplate,
+  ScrollText
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const navItems = [
   { icon: FileText, label: 'Documentos', path: '/documents' },
   { icon: Workflow, label: 'Processos', path: '/processes' },
   { icon: Zap, label: 'Automações', path: '/automations' },
+  { icon: ScrollText, label: 'Contratos', path: '/contracts' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Sliders, label: 'Campos', path: '/custom-fields' },
   { icon: Settings, label: 'Configurações', path: '/settings' },

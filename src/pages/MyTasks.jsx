@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import TopBar from '@/components/layout/TopBar';
 import ListView from '@/components/tasks/ListView';
+import TaskDialog from '@/components/tasks/TaskDialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +23,8 @@ export default function MyTasks() {
   const [statusFilter, setStatusFilter] = useState('active');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['all-tasks'],
@@ -74,9 +77,17 @@ export default function MyTasks() {
     updateTask.mutate({ taskId: task.id, data: { status: newStatus } });
   };
 
+  const handleSaveTask = (data) => {
+    if (selectedTask?.id) {
+      updateTask.mutate({ taskId: selectedTask.id, data });
+      setTaskDialogOpen(false);
+      setSelectedTask(null);
+    }
+  };
+
   const handleTaskClick = (task) => {
-    const project = projects.find(p => p.id === task.project_id);
-    if (project) window.location.href = `/projects/${project.id}`;
+    setSelectedTask(task);
+    setTaskDialogOpen(true);
   };
 
   const activeCount = myTasks.filter(t => t.status !== 'done').length;
@@ -179,6 +190,17 @@ export default function MyTasks() {
           </Card>
         </div>
       </div>
+      {taskDialogOpen && selectedTask && (
+        <TaskDialog
+          open={taskDialogOpen}
+          onClose={setTaskDialogOpen}
+          task={selectedTask}
+          projectId={selectedTask.project_id}
+          statuses={projects.find(p => p.id === selectedTask.project_id)?.custom_statuses}
+          onSave={handleSaveTask}
+          users={users}
+        />
+      )}
     </>
   );
 }

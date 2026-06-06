@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [filterUser, setFilterUser] = useState('all');
   const [filterTeam, setFilterTeam] = useState('all');
+  const [filterProject, setFilterProject] = useState('all');
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [widgets, setWidgets] = useState(() => loadWidgets());
 
@@ -68,6 +69,7 @@ export default function Dashboard() {
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
     if (filterUser !== 'all' && p.owner_id !== filterUser && !p.team_ids?.includes(filterUser)) return false;
     if (filterTeam !== 'all' && !p.team_ids?.includes(filterTeam)) return false;
+    if (filterProject !== 'all' && p.id !== filterProject) return false;
     if (filterPeriod === 'month' && p.due_date) {
       const due = parseISO(p.due_date);
       if (!isWithinInterval(due, { start: startOfMonth(new Date()), end: endOfMonth(new Date()) })) return false;
@@ -79,6 +81,7 @@ export default function Dashboard() {
     const proj = projects.find(p => p.id === t.project_id);
     if (filterClient !== 'all' && proj?.client_id !== filterClient) return false;
     if (filterUser !== 'all' && !t.assignee_ids?.includes(filterUser)) return false;
+    if (filterProject !== 'all' && t.project_id !== filterProject) return false;
     return true;
   });
 
@@ -187,12 +190,21 @@ export default function Dashboard() {
                 ))}
               </SelectContent>
             </Select>
-            {(filterClient !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterUser !== 'all' || filterTeam !== 'all') && (
+            <Select value={filterProject} onValueChange={setFilterProject}>
+              <SelectTrigger className="w-auto min-w-[130px] h-8 text-xs">
+                <SelectValue placeholder="Projeto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os projetos</SelectItem>
+                {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(filterClient !== 'all' || filterStatus !== 'all' || filterPeriod !== 'all' || filterUser !== 'all' || filterTeam !== 'all' || filterProject !== 'all') && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 text-xs text-muted-foreground"
-                onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterPeriod('all'); setFilterUser('all'); setFilterTeam('all'); }}
+                onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterPeriod('all'); setFilterUser('all'); setFilterTeam('all'); setFilterProject('all'); }}
               >
                 Limpar filtros
               </Button>
