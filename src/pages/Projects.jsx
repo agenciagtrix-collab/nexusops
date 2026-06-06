@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Search, FolderKanban, Calendar, LayoutTemplate } from 'lucide-react';
+import ExportPDFButton from '@/components/reports/ExportPDFButton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,7 @@ export default function Projects() {
         actions={
           canCreate && (
             <div className="flex items-center gap-2">
+              <ExportPDFButton label="PDF" />
               <Link to="/templates">
                 <Button size="sm" variant="outline" className="gap-1.5">
                   <LayoutTemplate className="w-4 h-4" />

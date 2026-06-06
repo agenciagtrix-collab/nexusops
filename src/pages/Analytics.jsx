@@ -13,6 +13,7 @@ import {
   PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 import { FolderKanban, CheckSquare, Clock, AlertTriangle, TrendingUp, Users, Zap, Filter } from 'lucide-react';
+import ExportPDFButton from '@/components/reports/ExportPDFButton';
 import { isPast, isToday, differenceInDays, format, subMonths, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
@@ -142,7 +143,7 @@ export default function Analytics() {
 
   return (
     <>
-      <TopBar onMenuToggle={onMenuToggle} title="Analytics" />
+      <TopBar onMenuToggle={onMenuToggle} title="Analytics" actions={<ExportPDFButton label="Exportar PDF" />} />
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">

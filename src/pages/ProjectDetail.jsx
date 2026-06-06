@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import TaskGroupManager from '@/components/tasks/TaskGroupManager';
 import AdvancedFilters, { applyFilters } from '@/components/tasks/AdvancedFilters';
+import ExportPDFButton from '@/components/reports/ExportPDFButton';
 
 const moduleTabItems = [
   { key: 'overview', label: 'Visão Geral', icon: Eye },
@@ -196,6 +197,7 @@ export default function ProjectDetail() {
             <Button variant="ghost" size="sm" onClick={() => navigate('/projects')} className="gap-1.5">
               <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Projetos</span>
             </Button>
+            <ExportPDFButton projectId={id} label="PDF" size="sm" />
             <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${id}/edit`)}>
               <Settings className="w-4 h-4" />
             </Button>
