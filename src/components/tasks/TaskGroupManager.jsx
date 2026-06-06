@@ -51,7 +51,10 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
   });
 
   const handleCreateGroup = () => {
-    if (!newGroupName.trim()) return;
+    if (!newGroupName.trim()) {
+      toast.error('Digite um nome para o grupo');
+      return;
+    }
     createGroup.mutate({
       name: newGroupName.trim(),
       project_id: projectId,
@@ -61,10 +64,6 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
   };
 
   const handleRenameGroup = (group) => {
-    if (!editingName.trim()) {
-      toast.error('O nome do grupo não pode ser vazio');
-      return;
-    }
     updateGroup.mutate({ id: group.id, data: { name: editingName.trim() } });
   };
 
@@ -120,7 +119,7 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
                   <span className="text-xs text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded-full">
                     {groupTasks.length}
                   </span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
                     <Button
                       variant="ghost" size="icon" className="h-6 w-6"
                       onClick={() => { setEditingGroupId(group.id); setEditingName(group.name); }}
