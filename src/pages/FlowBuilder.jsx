@@ -274,13 +274,13 @@ export default function FlowBuilder() {
         >
           <ReactFlowProvider>
             <ReactFlowCanvas
-              nodes={flow.nodes.map(n => ({
+              nodes={(flow.nodes || []).map(n => ({
                 id: n.id,
                 data: { ...n.data, label: n.label, type: n.type, emoji: blockEmojis[n.type] },
                 position: n.position || { x: 0, y: 0 },
                 type: 'flowBlock',
               }))}
-              edges={flow.edges}
+              edges={flow.edges || []}
               onNodesChange={handleNodesChange}
               onEdgesChange={handleEdgesChange}
               selectedNodeId={selectedNodeId}
