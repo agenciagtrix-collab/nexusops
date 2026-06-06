@@ -33,8 +33,15 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
     enabled: !!projectId,
   });
   const statusList = statuses?.length > 0
-    ? statuses.map(s => ({ name: s.name, key: s.name.toLowerCase().replace(/\s/g, '_') }))
+    ? statuses.map(s => ({ name: s.name, key: s.name.toLowerCase().replace(/\s/g, '_'), color: s.color }))
     : defaultStatuses;
+
+  // Normalize status value to match the statusList keys when project has custom statuses
+  const getStatusKey = (val) => {
+    if (!val) return statusList[0]?.key || 'todo';
+    const match = statusList.find(s => s.key === val || s.name === val);
+    return match ? match.key : val;
+  };
 
   const [form, setForm] = useState({
     title: '', description: '', status: 'todo', priority: 'medium',
@@ -183,10 +190,17 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={v => updateField('status', v)}>
+              <Select value={getStatusKey(form.status)} onValueChange={v => updateField('status', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {statusList.map(s => <SelectItem key={s.key} value={s.key}>{s.name}</SelectItem>)}
+                  {statusList.map(s => (
+                    <SelectItem key={s.key} value={s.key}>
+                      <div className="flex items-center gap-2">
+                        {s.color && <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />}
+                        {s.name}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

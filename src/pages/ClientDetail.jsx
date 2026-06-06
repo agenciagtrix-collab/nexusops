@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import ClientContractsTab from '@/components/client/ClientContractsTab';
 
 const statusLabels = { not_started: 'Não Iniciado', in_progress: 'Em Andamento', on_hold: 'Em Espera', completed: 'Concluído', cancelled: 'Cancelado' };
 const statusColors = { not_started: 'bg-slate-100 text-slate-600', in_progress: 'bg-primary/10 text-primary', on_hold: 'bg-amber-50 text-amber-600', completed: 'bg-emerald-50 text-emerald-600', cancelled: 'bg-red-50 text-red-600' };
@@ -126,6 +127,7 @@ export default function ClientDetail() {
     { key: 'overview', label: 'Visão Geral' },
     { key: 'projects', label: `Projetos (${projects.length})` },
     { key: 'tasks', label: `Tarefas (${allTasks.length})` },
+    { key: 'contracts', label: 'Contratos' },
     { key: 'files', label: 'Arquivos' },
     { key: 'notes', label: 'Observações' },
     { key: 'history', label: 'Histórico' },
@@ -354,6 +356,11 @@ export default function ClientDetail() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Contracts */}
+          {activeTab === 'contracts' && (
+            <ClientContractsTab clientId={id} />
           )}
 
           {/* Tasks */}

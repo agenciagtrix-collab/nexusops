@@ -1,0 +1,77 @@
+{
+  "name": "Contract",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do contrato"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "ID do cliente"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID do projeto relacionado"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "service",
+        "nda",
+        "employment",
+        "license",
+        "other"
+      ],
+      "default": "service",
+      "description": "Tipo de contrato"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "signed",
+        "active",
+        "expired",
+        "cancelled"
+      ],
+      "default": "draft",
+      "description": "Status do contrato"
+    },
+    "value": {
+      "type": "number",
+      "description": "Valor do contrato em R$"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de vencimento"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL do arquivo do contrato"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Nome do arquivo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o / escopo"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es"
+    }
+  },
+  "required": [
+    "title",
+    "client_id"
+  ]
+}

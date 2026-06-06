@@ -10,8 +10,9 @@ import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 import {
   Settings, Shield, Bell, Palette, Plus, Trash2, Save,
-  Globe, CheckSquare, Tag, AlertCircle, Users, Lock
+  Globe, CheckSquare, Tag, AlertCircle, Users, Lock, UserCog
 } from 'lucide-react';
+import UserManagement from '@/components/admin/UserManagement';
 import { cn } from '@/lib/utils';
 
 const DEFAULT_STATUSES = [
@@ -84,6 +85,7 @@ function StatusEditor({ statuses, setStatuses }) {
 
 const tabs = [
   { key: 'general', label: 'Geral', icon: Settings },
+  { key: 'users', label: 'Usuários', icon: UserCog },
   { key: 'statuses', label: 'Status', icon: CheckSquare },
   { key: 'priorities', label: 'Prioridades', icon: Tag },
   { key: 'security', label: 'Segurança', icon: Shield },
@@ -208,6 +210,17 @@ export default function SettingsPage() {
                       <Save className="w-4 h-4" /> Salvar
                     </Button>
                   </div>
+                </Card>
+              )}
+
+              {/* Users */}
+              {activeTab === 'users' && (
+                <Card className="p-6 space-y-4">
+                  <div>
+                    <h3 className="font-heading font-semibold">Gerenciamento de Usuários</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Convide e gerencie os usuários da plataforma, defina funções e permissões de acesso.</p>
+                  </div>
+                  <UserManagement />
                 </Card>
               )}
 

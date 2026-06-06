@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, Paperclip, MessageSquare, CheckSquare } from 'lucide-react';
+import { Calendar, Paperclip, MessageSquare, CheckSquare, GitMerge, RefreshCw } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -64,6 +64,17 @@ export default function TaskCard({ task, onClick, users = [] }) {
               <span className="flex items-center gap-1">
                 <Paperclip className="w-3 h-3" />
                 {task.attachments.length}
+              </span>
+            )}
+            {task.dependencies?.length > 0 && (
+              <span className="flex items-center gap-1 text-amber-600" title={`${task.dependencies.length} dependência(s)`}>
+                <GitMerge className="w-3 h-3" />
+                {task.dependencies.length}
+              </span>
+            )}
+            {task.is_recurring && (
+              <span className="flex items-center gap-1 text-primary" title="Tarefa recorrente">
+                <RefreshCw className="w-3 h-3" />
               </span>
             )}
           </div>

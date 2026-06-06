@@ -27,6 +27,7 @@ import CustomFields from '@/pages/CustomFields';
 import ClientDetail from '@/pages/ClientDetail';
 import Processes from '@/pages/Processes';
 import Profile from '@/pages/Profile';
+import SuperAdminPanel from '@/pages/SuperAdminPanel';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -77,6 +78,7 @@ const AuthenticatedApp = () => {
           <Route path="/custom-fields" element={<CustomFields />} />
           <Route path="/processes" element={<Processes />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<SuperAdminPanel />} />
         </Route>
       </Route>
 

@@ -17,8 +17,10 @@ import {
   FileText,
   Sliders,
   Workflow,
-  UserCircle
+  UserCircle,
+  ShieldCheck
 } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { base44 } from '@/api/base44Client';
@@ -39,6 +41,8 @@ const navItems = [
 export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const handleLogout = () => {
     base44.auth.logout('/login');
@@ -112,6 +116,25 @@ export default function Sidebar({ collapsed, onToggle }) {
           );
         })}
       </nav>
+
+      {/* Admin Panel Link */}
+      {isAdmin && (
+        <div className="px-3 pb-1">
+          <Link
+            to="/admin"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+              location.pathname === '/admin'
+                ? "bg-purple-600 text-white shadow-sm"
+                : "text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+            )}
+            title={collapsed ? 'Painel Admin' : undefined}
+          >
+            <ShieldCheck className="w-5 h-5 shrink-0" />
+            {!collapsed && <span>Painel Admin</span>}
+          </Link>
+        </div>
+      )}
 
       {/* Bottom */}
       <div className="px-3 py-3 border-t border-sidebar-border space-y-1">
