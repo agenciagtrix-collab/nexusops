@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import {
   Save, Play, Share2, Settings, Plus, Wand2, FileText,
 } from 'lucide-react';
-import FlowCanvasWithConnections from '@/components/flows/FlowCanvasWithConnections';
+import AdvancedFlowCanvas from '@/components/flows/AdvancedFlowCanvas';
 import BlockPaletteV2 from '@/components/flows/BlockPaletteV2';
-import BlockInspector from '@/components/flows/BlockInspector';
+import DynamicPropertiesPanel from '@/components/flows/DynamicPropertiesPanel';
+import FlowSimulator from '@/components/flows/FlowSimulator';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -32,7 +33,11 @@ export default function FlowBuilder() {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectFromNodeId, setConnectFromNodeId] = useState(null);
+  const [highlightedNodeId, setHighlightedNodeId] = useState(null);
 
   const { data: existingFlow } = useQuery({
     queryKey: ['flow', id],
@@ -100,9 +105,19 @@ export default function FlowBuilder() {
           id: `edge-${Date.now()}`,
           source: sourceId,
           target: targetId,
+          label: ''
         }],
       };
     });
+    setIsConnecting(false);
+    setConnectFromNodeId(null);
+  };
+
+  const handleDeleteEdge = (edgeId) => {
+    setFlow(prev => ({
+      ...prev,
+      edges: prev.edges.filter(e => e.id !== edgeId),
+    }));
   };
 
   const handleSave = async () => {
@@ -171,6 +186,16 @@ export default function FlowBuilder() {
 
           <div className="flex gap-2">
             <Button
+              onClick={() => setShowSimulator(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Play className="w-4 h-4" />
+              Testar
+            </Button>
+
+            <Button
               onClick={() => setShowAIGenerator(true)}
               variant="outline"
               size="sm"
@@ -205,30 +230,48 @@ export default function FlowBuilder() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleAddBlock}
         >
-          <FlowCanvasWithConnections
+          <AdvancedFlowCanvas
             nodes={flow.nodes}
             edges={flow.edges}
             selectedNodeId={selectedNodeId}
             onNodeSelect={setSelectedNodeId}
             onNodeDrag={handleNodeDrag}
+            onConnectStart={(nodeId) => {
+              setConnectFromNodeId(nodeId);
+              setIsConnecting(true);
+            }}
+            onConnectEnd={(sourceId, targetId) => {
+              handleEdgeCreate(sourceId, targetId);
+            }}
+            isConnecting={isConnecting}
+            connectFromNodeId={connectFromNodeId}
+            onAddNode={handleAddBlock}
+            onDeleteNode={handleDeleteNode}
+            onDeleteEdge={handleDeleteEdge}
           />
         </div>
       </div>
 
-      {/* Right Sidebar - Inspector */}
-      <div className="w-72 flex flex-col border-l border-border">
-        <BlockInspector
-          node={selectedNode}
-          onUpdate={(updates) => {
-            setFlow(prev => ({
-              ...prev,
-              nodes: prev.nodes.map(n =>
-                n.id === selectedNodeId ? { ...n, ...updates } : n
-              ),
-            }));
-          }}
-          onDelete={handleDeleteNode}
-        />
+      {/* Right Sidebar - Dynamic Properties Panel */}
+      <div className="flex flex-col border-l border-border h-full bg-card">
+        {selectedNodeId ? (
+          <DynamicPropertiesPanel
+            selectedNode={selectedNode}
+            onUpdate={(updatedNode) => {
+              setFlow(prev => ({
+                ...prev,
+                nodes: prev.nodes.map(n =>
+                  n.id === selectedNodeId ? updatedNode : n
+                ),
+              }));
+            }}
+            onClose={() => setSelectedNodeId(null)}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-4">
+            Selecione um bloco para editar
+          </div>
+        )}
       </div>
 
       {/* AI Generator Dialog */}
@@ -267,6 +310,17 @@ export default function FlowBuilder() {
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Flow Simulator */}
+      {showSimulator && (
+        <FlowSimulator
+          nodes={flow.nodes}
+          edges={flow.edges}
+          onClose={() => setShowSimulator(false)}
+          highlightedNodeId={highlightedNodeId}
+          onNodeHighlight={setHighlightedNodeId}
+        />
       )}
     </div>
   );
