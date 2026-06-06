@@ -71,7 +71,7 @@ export default function FlowResponses() {
         onMenuToggle={onMenuToggle}
         title="Respostas"
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
           <Button
           variant="outline"
           size="sm"
@@ -79,6 +79,14 @@ export default function FlowResponses() {
           onClick={() => navigate(`/flows/${flowId}/analytics`)}
           >
           📊 Analytics
+          </Button>
+          <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => navigate(`/flows/${flowId}/table`)}
+          >
+          📋 Planilha
           </Button>
           <Button variant="outline" size="sm" className="gap-1.5">
           <Download className="w-4 h-4" /> Exportar

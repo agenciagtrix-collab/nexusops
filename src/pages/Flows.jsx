@@ -78,9 +78,18 @@ export default function Flows() {
         onMenuToggle={onMenuToggle}
         title="Fluxos"
         actions={
-          <Button onClick={() => navigate('/flows/new')} size="sm" className="gap-1.5">
-            <Plus className="w-4 h-4" /> Novo Fluxo
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/flows/dashboard')}
+              size="sm"
+            >
+              📊 Dashboard
+            </Button>
+            <Button onClick={() => navigate('/flows/new')} size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" /> Novo Fluxo
+            </Button>
+          </div>
         }
       />
 

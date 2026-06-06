@@ -49,6 +49,9 @@ import FlowTemplates from '@/pages/FlowTemplates';
 import FlowPublic from '@/pages/FlowPublic';
 import FlowResponses from '@/pages/FlowResponses';
 import FlowAnalytics from '@/pages/FlowAnalytics';
+import FlowDashboard from '@/pages/FlowDashboard';
+import FlowResponseDetail from '@/pages/FlowResponseDetail';
+import FlowResponsesTable from '@/pages/FlowResponsesTable';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -117,11 +120,14 @@ const AuthenticatedApp = () => {
           <Route path="/form-templates" element={<FormTemplates />} />
           <Route path="/form-ai-creator" element={<FormAICreator />} />
           <Route path="/flows" element={<Flows />} />
+          <Route path="/flows/dashboard" element={<FlowDashboard />} />
           <Route path="/flows/templates" element={<FlowTemplates />} />
           <Route path="/flows/new" element={<FlowBuilder />} />
           <Route path="/flows/:id/edit" element={<FlowBuilder />} />
           <Route path="/flows/:flowId/responses" element={<FlowResponses />} />
           <Route path="/flows/:flowId/analytics" element={<FlowAnalytics />} />
+          <Route path="/flows/:flowId/table" element={<FlowResponsesTable />} />
+          <Route path="/flow-response/:responseId" element={<FlowResponseDetail />} />
         </Route>
       </Route>
 
