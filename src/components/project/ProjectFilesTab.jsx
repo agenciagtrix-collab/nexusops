@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import FilePreviewModal from '@/components/ui/FilePreviewModal';
-import { FileText, Image, Film, FileSpreadsheet, File, Upload, ExternalLink, Loader2, Trash2, Eye } from 'lucide-react';
+import { FileText, Image, Film, FileSpreadsheet, File, Upload, ExternalLink, Loader2, Trash2, Eye, Globe } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -45,6 +46,11 @@ export default function ProjectFilesTab({ project, tasks = [] }) {
     },
   });
 
+  const toggleShareMutation = useMutation({
+    mutationFn: ({ id, val }) => base44.entities.Document.update(id, { shared_with_client: val }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-documents', project?.id] }),
+  });
+
   // Task attachments (inline, not in DB as Document)
   const taskFiles = tasks.flatMap(task =>
     (task.attachments || []).map(att => ({ ...att, source: `Tarefa: ${task.title}`, fromTask: true }))
@@ -64,6 +70,7 @@ export default function ProjectFilesTab({ project, tasks = [] }) {
       await base44.entities.Document.create({
         name: file.name, url: file_url, type: file.type,
         size: file.size, project_id: project.id, context: 'project',
+        shared_with_client: false,
       });
     }
     queryClient.invalidateQueries({ queryKey: ['project-documents', project?.id] });
@@ -130,6 +137,20 @@ export default function ProjectFilesTab({ project, tasks = [] }) {
                     )}
                   </div>
                 </div>
+                {/* Share with client toggle */}
+                {!file.fromTask && file.id && (
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-[10px] text-muted-foreground">Compartilhar com cliente</span>
+                    </div>
+                    <Switch
+                      checked={!!file.shared_with_client}
+                      onCheckedChange={(val) => toggleShareMutation.mutate({ id: file.id, val })}
+                      className="scale-75"
+                    />
+                  </div>
+                )}
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => setPreview(file)}

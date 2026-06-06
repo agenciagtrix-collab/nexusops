@@ -1,92 +1,125 @@
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Building2, CheckCircle2 } from 'lucide-react';
+import { Calendar, Clock, Building2, User } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 const statusConfig = {
-  not_started: { label: 'Não Iniciado', className: 'bg-gray-100 text-gray-700 border-gray-200' },
-  in_progress:  { label: 'Em Andamento', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-  on_hold:      { label: 'Em Pausa',    className: 'bg-amber-100 text-amber-700 border-amber-200' },
-  completed:    { label: 'Concluído',   className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-  cancelled:    { label: 'Cancelado',   className: 'bg-red-100 text-red-700 border-red-200' },
+  not_started: { label: 'Não Iniciado', dot: 'bg-gray-400' },
+  in_progress:  { label: 'Em Andamento', dot: 'bg-blue-500' },
+  on_hold:      { label: 'Em Pausa',    dot: 'bg-amber-500' },
+  completed:    { label: 'Concluído',   dot: 'bg-emerald-500' },
+  cancelled:    { label: 'Cancelado',   dot: 'bg-red-500' },
 };
 
-function InfoCard({ icon: IconComp, label, value }) {
+const priorityConfig = {
+  low:      { label: 'Baixa',    class: 'bg-gray-100 text-gray-600 border-gray-200' },
+  medium:   { label: 'Média',    class: 'bg-blue-50 text-blue-600 border-blue-200' },
+  high:     { label: 'Alta',     class: 'bg-amber-50 text-amber-700 border-amber-200' },
+  urgent:   { label: 'Urgente',  class: 'bg-orange-50 text-orange-700 border-orange-200' },
+  critical: { label: 'Crítica',  class: 'bg-red-50 text-red-700 border-red-200' },
+};
+
+function MetaChip({ icon: IconComp, label, value }) {
+  if (!value) return null;
   return (
-    <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-3 border border-border backdrop-blur-sm">
-      <div className="flex items-center gap-1.5 mb-1">
-        <IconComp className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-sm font-semibold truncate">{value}</p>
+    <div className="flex items-center gap-1.5 text-sm text-white/90">
+      <IconComp className="w-3.5 h-3.5 text-white/60 flex-shrink-0" />
+      <span className="text-white/60 text-xs">{label}:</span>
+      <span className="font-medium">{value}</span>
     </div>
   );
 }
 
 export default function PortalHeader({ project, client, tasks, settings }) {
-  const completed = tasks.filter(t => t.status === 'done').length;
-  const progress = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : (project.progress || 0);
+  const accentColor = project.color || '#6366f1';
+  const fmtDate = (d) => d ? format(parseISO(d), "dd 'de' MMMM, yyyy", { locale: ptBR }) : null;
   const status = statusConfig[project.status] || statusConfig.not_started;
-  const fmtDate = (d) => d ? format(parseISO(d), "dd/MM/yyyy", { locale: ptBR }) : '—';
+  const priority = priorityConfig[project.priority];
 
   return (
     <div
-      className="border-b border-border"
-      style={{ background: `linear-gradient(135deg, ${(project.color || '#6366f1')}18 0%, ${(project.color || '#6366f1')}08 100%)`, borderBottom: `3px solid ${project.color || '#6366f1'}` }}
+      className="relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${accentColor}ee 0%, ${accentColor}99 60%, ${accentColor}cc 100%)`,
+      }}
     >
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Title row */}
-        <div className="flex items-start gap-4 mb-6">
-          <div
-            className="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl shadow-lg"
-            style={{ backgroundColor: project.color || '#6366f1' }}
-          >
-            {project.name?.charAt(0).toUpperCase()}
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)`,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Soft blob */}
+      <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20"
+        style={{ background: 'rgba(255,255,255,0.3)', filter: 'blur(40px)' }} />
+
+      <div className="relative max-w-5xl mx-auto px-4 py-10">
+        <div className="flex flex-col md:flex-row items-start gap-6">
+          {/* Project icon */}
+          <div className="flex-shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
+              <span className="text-white font-bold text-3xl">
+                {project.name?.charAt(0).toUpperCase()}
+              </span>
+            </div>
           </div>
+
+          {/* Project info */}
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
-              {project.code && (
-                <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded-md">{project.code}</span>
+            {/* Status + priority badges */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-2.5 py-1 border border-white/20">
+                <div className={cn("w-2 h-2 rounded-full", status.dot)} />
+                <span className="text-xs text-white font-medium">{status.label}</span>
+              </div>
+              {priority && (
+                <Badge className={cn("text-xs border", priority.class)}>{priority.label}</Badge>
               )}
-              <Badge className={cn("text-xs border", status.className)}>{status.label}</Badge>
+              {project.code && (
+                <span className="text-xs font-mono bg-white/15 text-white/80 backdrop-blur-sm px-2 py-0.5 rounded-md border border-white/20">
+                  {project.code}
+                </span>
+              )}
             </div>
+
+            {/* Title */}
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 leading-tight">
+              {project.name}
+            </h1>
+
+            {/* Description */}
             {project.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{project.description}</p>
+              <p className="text-white/75 text-sm leading-relaxed mb-4 max-w-2xl line-clamp-2">
+                {project.description}
+              </p>
             )}
-          </div>
-        </div>
 
-        {/* Info cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {client && (
-            <InfoCard icon={Building2} label="Cliente" value={client.company || client.name} />
-          )}
-          {project.due_date && settings.show_due_dates && (
-            <InfoCard icon={Calendar} label="Previsão de entrega" value={fmtDate(project.due_date)} />
-          )}
-          <InfoCard icon={CheckCircle2} label="Progresso" value={`${completed} / ${tasks.length} tarefas`} />
-          <InfoCard icon={Clock} label="Atualizado em" value={fmtDate(project.updated_date)} />
-        </div>
-
-        {/* Progress bar */}
-        {settings.show_progress && tasks.length > 0 && (
-          <div className="bg-white/80 dark:bg-gray-800/80 rounded-xl p-4 border border-border backdrop-blur-sm">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-foreground">Progresso geral</span>
-              <span className="text-xl font-bold" style={{ color: project.color || '#6366f1' }}>{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-3" />
-            <div className="flex justify-between mt-2 text-xs">
-              <span className="text-emerald-600 font-medium">{completed} concluídas</span>
-              <span className="text-muted-foreground">{tasks.length - completed} em aberto</span>
+            {/* Meta chips */}
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+              {client && (
+                <MetaChip icon={Building2} label="Cliente" value={client.company || client.name} />
+              )}
+              {settings.show_due_dates && project.due_date && (
+                <MetaChip icon={Calendar} label="Entrega" value={fmtDate(project.due_date)} />
+              )}
+              <MetaChip
+                icon={Clock}
+                label="Atualizado"
+                value={project.updated_date ? format(parseISO(project.updated_date), "dd/MM/yyyy", { locale: ptBR }) : null}
+              />
             </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Bottom wave */}
+      <svg viewBox="0 0 1440 32" className="absolute bottom-0 left-0 right-0 w-full" preserveAspectRatio="none" style={{ height: 32 }}>
+        <path d="M0,32L1440,0L1440,32L0,32Z" fill="rgb(249 250 251)" className="dark:fill-gray-950" />
+      </svg>
     </div>
   );
 }
