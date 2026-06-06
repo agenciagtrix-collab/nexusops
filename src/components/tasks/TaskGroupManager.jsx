@@ -167,33 +167,6 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
         );
       })}
 
-      {/* Ungrouped tasks */}
-      {ungroupedTasks.length > 0 && (
-        <div className="rounded-xl border border-border/60 overflow-hidden">
-          <div
-            className="flex items-center gap-2 px-4 py-2.5 bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
-            onClick={() => toggleCollapse('__ungrouped')}
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 shrink-0" />
-            <span className="text-sm font-semibold flex-1 text-muted-foreground">Sem grupo</span>
-            <span className="text-xs text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded-full">
-              {ungroupedTasks.length}
-            </span>
-            {collapsed['__ungrouped']
-              ? <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              : <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            }
-          </div>
-          {!collapsed['__ungrouped'] && (
-            <div className="p-3 space-y-2 bg-background">
-              {ungroupedTasks.map(task => (
-                <TaskCard key={task.id} task={task} onClick={onTaskClick} users={users} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* New group form */}
       {showNewGroup ? (
         <div className="flex items-center gap-2 p-3 rounded-xl border border-dashed border-primary/40 bg-primary/5">
