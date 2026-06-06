@@ -174,7 +174,7 @@ Gere uma análise estruturada identificando riscos. Responda em JSON com o segui
             size="sm"
             className="gap-1.5"
             disabled={linkedAgents.length === 0}
-            onClick={() => navigate(`/ai-agents/chat?agent=${linkedAgents[0]?.id}&project=${project.id}`)}
+            onClick={() => navigate(`/ai-agents/chat?agent=${linkedAgents[0]?.id}`)}
           >
             <MessageSquare className="w-3.5 h-3.5" /> Iniciar Conversa
           </Button>
@@ -228,7 +228,7 @@ Gere uma análise estruturada identificando riscos. Responda em JSON com o segui
                       <div className="flex items-center gap-2 mt-2">
                         <Button size="sm" variant="outline" className="h-7 text-xs gap-1 px-2"
                           onClick={() => navigate(`/ai-agents/chat?agent=${agent.id}`)}>
-                          <MessageSquare className="w-3 h-3" /> Chat
+                          <MessageSquare className="w-3 h-3" /> Conversar
                         </Button>
                         {agent.is_proactive && (
                           <Badge className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">Proativo</Badge>
