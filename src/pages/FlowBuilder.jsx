@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import {
   Save, Play, Share2, Settings, Plus, Wand2, FileText,
 } from 'lucide-react';
-import AdvancedFlowCanvas from '@/components/flows/AdvancedFlowCanvas';
+import { ReactFlowProvider } from 'reactflow';
+import ReactFlowCanvas from '@/components/flows/ReactFlowCanvas';
 import BlockPaletteV2 from '@/components/flows/BlockPaletteV2';
 import DynamicPropertiesPanel from '@/components/flows/DynamicPropertiesPanel';
 import FlowSimulator from '@/components/flows/FlowSimulator';
@@ -38,6 +39,13 @@ export default function FlowBuilder() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectFromNodeId, setConnectFromNodeId] = useState(null);
   const [highlightedNodeId, setHighlightedNodeId] = useState(null);
+
+  const blockEmojis = {
+    start: '▶️', text: '📝', question: '❓', email: '✉️', phone: '📱',
+    number: '🔢', date: '📅', single_choice: '⭕', multiple_choice: '☑️',
+    condition: '❓', split: '🔀', ai_ask: '💬', create_project: '📋',
+    create_client: '👤', send_email: '✉️', show_result: '🎉', end: '⏹️',
+  };
 
   const { data: existingFlow } = useQuery({
     queryKey: ['flow', id],
@@ -75,13 +83,36 @@ export default function FlowBuilder() {
     }));
   };
 
-  const handleNodeDrag = (nodeId, newPos) => {
-    setFlow(prev => ({
-      ...prev,
-      nodes: prev.nodes.map(n =>
-        n.id === nodeId ? { ...n, position: newPos } : n
-      ),
-    }));
+  const handleNodesChange = (changes) => {
+    setFlow(prev => {
+      const updatedNodes = [...prev.nodes];
+      changes.forEach(change => {
+        if (change.type === 'position' && change.position) {
+          const nodeIndex = updatedNodes.findIndex(n => n.id === change.id);
+          if (nodeIndex !== -1) {
+            updatedNodes[nodeIndex] = {
+              ...updatedNodes[nodeIndex],
+              position: change.position,
+            };
+          }
+        }
+      });
+      return { ...prev, nodes: updatedNodes };
+    });
+  };
+
+  const handleEdgesChange = (changes) => {
+    setFlow(prev => {
+      let updatedEdges = [...(prev.edges || [])];
+      changes.forEach(change => {
+        if (change.type === 'add') {
+          updatedEdges.push(change.item);
+        } else if (change.type === 'remove') {
+          updatedEdges = updatedEdges.filter(e => e.id !== change.id);
+        }
+      });
+      return { ...prev, edges: updatedEdges };
+    });
   };
 
   const handleDeleteNode = () => {
@@ -234,25 +265,23 @@ export default function FlowBuilder() {
           }}
           onDrop={handleAddBlock}
         >
-          <AdvancedFlowCanvas
-            nodes={flow.nodes}
-            edges={flow.edges}
-            selectedNodeId={selectedNodeId}
-            onNodeSelect={setSelectedNodeId}
-            onNodeDrag={handleNodeDrag}
-            onConnectStart={(nodeId) => {
-              setConnectFromNodeId(nodeId);
-              setIsConnecting(true);
-            }}
-            onConnectEnd={(sourceId, targetId) => {
-              handleEdgeCreate(sourceId, targetId);
-            }}
-            isConnecting={isConnecting}
-            connectFromNodeId={connectFromNodeId}
-            onAddNode={handleAddBlock}
-            onDeleteNode={handleDeleteNode}
-            onDeleteEdge={handleDeleteEdge}
-          />
+          <ReactFlowProvider>
+            <ReactFlowCanvas
+              nodes={flow.nodes.map(n => ({
+                id: n.id,
+                data: { ...n.data, label: n.label, type: n.type, emoji: blockEmojis[n.type] },
+                position: n.position || { x: 0, y: 0 },
+                type: 'flowBlock',
+              }))}
+              edges={flow.edges}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
+              selectedNodeId={selectedNodeId}
+              onNodeSelect={setSelectedNodeId}
+              onDeleteNode={handleDeleteNode}
+              onDeleteEdge={handleDeleteEdge}
+            />
+          </ReactFlowProvider>
         </div>
       </div>
 
