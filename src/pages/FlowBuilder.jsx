@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import {
   Save, Play, Share2, Settings, Plus, Wand2, FileText,
 } from 'lucide-react';
-import ImprovedFlowCanvas from '@/components/flows/ImprovedFlowCanvas';
+import FlowCanvasWithConnections from '@/components/flows/FlowCanvasWithConnections';
 import BlockPaletteV2 from '@/components/flows/BlockPaletteV2';
 import BlockInspector from '@/components/flows/BlockInspector';
 import {
@@ -87,6 +87,22 @@ export default function FlowBuilder() {
       edges: prev.edges.filter(e => e.source !== selectedNodeId && e.target !== selectedNodeId),
     }));
     setSelectedNodeId(null);
+  };
+
+  const handleEdgeCreate = (sourceId, targetId) => {
+    setFlow(prev => {
+      const edgeExists = prev.edges?.some(e => e.source === sourceId && e.target === targetId);
+      if (edgeExists) return prev;
+
+      return {
+        ...prev,
+        edges: [...(prev.edges || []), {
+          id: `edge-${Date.now()}`,
+          source: sourceId,
+          target: targetId,
+        }],
+      };
+    });
   };
 
   const handleSave = async () => {
@@ -189,7 +205,7 @@ export default function FlowBuilder() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleAddBlock}
         >
-          <ImprovedFlowCanvas
+          <FlowCanvasWithConnections
             nodes={flow.nodes}
             edges={flow.edges}
             selectedNodeId={selectedNodeId}

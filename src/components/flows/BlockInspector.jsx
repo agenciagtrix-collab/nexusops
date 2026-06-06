@@ -110,15 +110,17 @@ export default function BlockInspector({ node, onUpdate, onDelete }) {
           )}
 
           {currentConfig.includes('required') && (
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={node.data?.required || false}
-                onChange={(e) => onUpdate({ data: { ...node.data, required: e.target.checked } })}
-                className="w-4 h-4 rounded"
-              />
-              <span>Campo obrigatório</span>
-            </label>
+            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+              <label className="flex items-center gap-3 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={node.data?.required || false}
+                  onChange={(e) => onUpdate({ data: { ...node.data, required: e.target.checked } })}
+                  className="w-4 h-4 rounded accent-primary"
+                />
+                <span className="font-medium">Campo obrigatório</span>
+              </label>
+            </div>
           )}
 
           {currentConfig.includes('subject') && (
