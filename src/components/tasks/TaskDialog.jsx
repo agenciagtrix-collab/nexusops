@@ -39,6 +39,12 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
     enabled: !!projectId,
   });
 
+  const [form, setForm] = useState({
+    title: '', description: '', status: 'todo', priority: 'medium',
+    start_date: '', due_date: '', estimated_hours: '', assignee_ids: [],
+    tags: [], checklist: [], project_id: projectId,
+  });
+
   const pendingDeps = (form.dependencies || [])
     .map(id => allProjectTasks.find(t => t.id === id))
     .filter(t => t && t.status !== 'done');
@@ -52,12 +58,6 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
     const match = statusList.find(s => s.key === val || s.name === val);
     return match ? match.key : val;
   };
-
-  const [form, setForm] = useState({
-    title: '', description: '', status: 'todo', priority: 'medium',
-    start_date: '', due_date: '', estimated_hours: '', assignee_ids: [],
-    tags: [], checklist: [], project_id: projectId,
-  });
 
   const [newCheckItem, setNewCheckItem] = useState('');
   const [newTag, setNewTag] = useState('');
