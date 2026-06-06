@@ -12,6 +12,8 @@ export default function FlowSimulator({ nodes, edges, onClose, highlightedNodeId
   const [executedNodes, setExecutedNodes] = useState([]);
   const [output, setOutput] = useState('');
   const [currentInput, setCurrentInput] = useState('');
+  const MAX_ITERATIONS = 100;
+  const executedNodesRef = useRef([]);
 
   const nodeMap = nodes.reduce((acc, node) => {
     acc[node.id] = node;
@@ -29,6 +31,7 @@ export default function FlowSimulator({ nodes, edges, onClose, highlightedNodeId
   const handleStart = () => {
     setIsRunning(true);
     setCurrentNodeId(startNode?.id);
+    executedNodesRef.current = [startNode?.id];
     setExecutedNodes([startNode?.id]);
     setResponses({});
     setOutput('Fluxo iniciado...\n');
@@ -38,6 +41,7 @@ export default function FlowSimulator({ nodes, edges, onClose, highlightedNodeId
   const handleReset = () => {
     setIsRunning(false);
     setCurrentNodeId(null);
+    executedNodesRef.current = [];
     setExecutedNodes([]);
     setResponses({});
     setOutput('');
@@ -46,6 +50,13 @@ export default function FlowSimulator({ nodes, edges, onClose, highlightedNodeId
 
   const handleNext = () => {
     if (!currentNodeId) return;
+
+    // Check for infinite loops
+    if (executedNodesRef.current.length >= MAX_ITERATIONS) {
+      setOutput(prev => prev + '\n❌ Erro: Número máximo de iterações atingido. Possível loop infinito detectado.');
+      setIsRunning(false);
+      return;
+    }
 
     const currentNode = nodeMap[currentNodeId];
     const nextEdges = edgeMap[currentNodeId] || [];
@@ -63,6 +74,7 @@ export default function FlowSimulator({ nodes, edges, onClose, highlightedNodeId
     if (nextNodeId) {
       const nextNode = nodeMap[nextNodeId];
       setCurrentNodeId(nextNodeId);
+      executedNodesRef.current.push(nextNodeId);
       setExecutedNodes(prev => [...prev, nextNodeId]);
       
       // Update output
