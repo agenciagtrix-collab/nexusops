@@ -1,17 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut } from 'lucide-react';
+import { ZoomIn, ZoomOut, Trash2 } from 'lucide-react';
 
 export default function FlowCanvasWithConnections({
   nodes, edges, onNodeSelect, onNodeDrag, selectedNodeId, onEdgeCreate,
 }) {
-  const canvasRef = useRef(null);
+  const svgRef = useRef(null);
+  const containerRef = useRef(null);
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 50, y: 50 });
-  const [isDragging, setIsDragging] = useState(false);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   const [dragStart, setDragStart] = useState(null);
   const [connecting, setConnecting] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [draggingNode, setDraggingNode] = useState(null);
 
   const BLOCK_WIDTH = 240;
   const BLOCK_HEIGHT = 100;
@@ -22,13 +24,14 @@ export default function FlowCanvasWithConnections({
 
   const handleCanvasMouseDown = (e) => {
     if (e.button === 2 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
-      setIsDragging(true);
+      setIsDraggingCanvas(true);
       setDragStart({ x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y });
+      e.preventDefault();
     }
   };
 
   const handleCanvasMouseMove = (e) => {
-    if (isDragging && dragStart) {
+    if (isDraggingCanvas && dragStart) {
       const dx = e.clientX - dragStart.x;
       const dy = e.clientY - dragStart.y;
       setPan({ x: dragStart.panX + dx, y: dragStart.panY + dy });
@@ -37,7 +40,16 @@ export default function FlowCanvasWithConnections({
   };
 
   const handleCanvasMouseUp = () => {
-    setIsDragging(false);
+    setIsDraggingCanvas(false);
+  };
+
+  const screenToCanvasCoords = (screenX, screenY) => {
+    if (!containerRef.current) return { x: screenX, y: screenY };
+    const rect = containerRef.current.getBoundingClientRect();
+    return {
+      x: (screenX - rect.left - pan.x) / zoom,
+      y: (screenY - rect.top - pan.y) / zoom,
+    };
   };
 
   const getBlockPosition = (node) => ({
@@ -94,25 +106,29 @@ export default function FlowCanvasWithConnections({
   };
 
   return (
-    <div className="relative w-full h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 overflow-hidden cursor-grab active:cursor-grabbing"
+      onMouseDown={handleCanvasMouseDown}
+      onMouseMove={handleCanvasMouseMove}
+      onMouseUp={handleCanvasMouseUp}
+      onMouseLeave={handleCanvasMouseUp}
+      onContextMenu={(e) => e.preventDefault()}
+      onWheel={(e) => {
+        e.preventDefault();
+        handleZoom(e.deltaY > 0 ? -0.1 : 0.1);
+      }}
+    >
+      {/* SVG Canvas for connections */}
       <svg
-        ref={canvasRef}
+        ref={svgRef}
         width="100%"
         height="100%"
-        className="absolute inset-0"
-        onMouseDown={handleCanvasMouseDown}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseUp={handleCanvasMouseUp}
-        onMouseLeave={handleCanvasMouseUp}
-        onContextMenu={(e) => e.preventDefault()}
-        onWheel={(e) => {
-          e.preventDefault();
-          handleZoom(e.deltaY > 0 ? -0.1 : 0.1);
-        }}
+        className="absolute inset-0 pointer-events-none"
       >
         <defs>
-          <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.5" fill="currentColor" opacity="0.05" />
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.8" fill="currentColor" opacity="0.08" />
           </pattern>
           <marker
             id="arrowhead"
@@ -122,61 +138,71 @@ export default function FlowCanvasWithConnections({
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0, 10 3, 0 6" fill="hsl(var(--primary) / 0.5)" />
+            <polygon points="0 0, 10 3, 0 6" fill="hsl(var(--primary))" />
           </marker>
         </defs>
 
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-          <rect width="5000" height="5000" fill="url(#grid)" x="-2500" y="-2500" />
+          <rect width="10000" height="10000" fill="url(#grid)" x="-5000" y="-5000" />
           {drawConnections()}
 
           {/* Temporary connection line while connecting */}
-          {connecting && (
+          {connecting && nodes?.find(n => n.id === connecting.nodeId) && (
             <line
               x1={getBlockPosition(nodes.find(n => n.id === connecting.nodeId)).x + BLOCK_WIDTH}
               y1={getBlockPosition(nodes.find(n => n.id === connecting.nodeId)).cy}
               x2={(mousePos.x - pan.x) / zoom}
               y2={(mousePos.y - pan.y) / zoom}
-              stroke="hsl(var(--primary) / 0.3)"
-              strokeWidth="2"
+              stroke="hsl(var(--primary))"
+              strokeWidth="2.5"
               strokeDasharray="5,5"
+              opacity="0.6"
+              pointerEvents="none"
             />
           )}
         </g>
       </svg>
 
-      {/* Nodes */}
-      <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', pointerEvents: 'auto' }}>
+      {/* Nodes Layer */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: '0 0',
+        }}
+      >
         {nodes?.map(node => (
-          <FlowNodeV2
-            key={node.id}
-            node={node}
-            isSelected={selectedNodeId === node.id}
-            onSelect={() => onNodeSelect(node.id)}
-            onDrag={(pos) => onNodeDrag(node.id, pos)}
-            onConnectStart={() => setConnecting({ nodeId: node.id })}
-            onConnectEnd={(targetId) => {
-              if (connecting && targetId !== connecting.nodeId) {
-                onEdgeCreate(connecting.nodeId, targetId);
-              }
-              setConnecting(null);
-            }}
-            isConnecting={connecting?.nodeId === node.id}
-          />
+          <div key={node.id} style={{ pointerEvents: 'auto' }}>
+            <FlowNodeV2
+              node={node}
+              isSelected={selectedNodeId === node.id}
+              onSelect={() => onNodeSelect(node.id)}
+              onDrag={(pos) => onNodeDrag(node.id, pos)}
+              onConnectStart={() => setConnecting({ nodeId: node.id })}
+              onConnectEnd={(targetId) => {
+                if (connecting && targetId !== connecting.nodeId) {
+                  onEdgeCreate(connecting.nodeId, targetId);
+                }
+                setConnecting(null);
+              }}
+              isConnecting={connecting?.nodeId === node.id}
+            />
+          </div>
         ))}
       </div>
 
       {/* Zoom Controls */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-1 bg-card rounded-xl shadow-lg p-1.5 z-20">
+      <div className="absolute bottom-6 right-6 flex flex-col gap-1 bg-card rounded-xl shadow-lg p-1.5 z-20 border border-border">
         <Button
           size="icon"
           variant="ghost"
           onClick={() => handleZoom(0.1)}
           className="h-9 w-9 hover:bg-muted"
+          title="Zoom in"
         >
           <ZoomIn className="w-4 h-4" />
         </Button>
-        <div className="text-xs text-center text-muted-foreground font-medium px-2 py-1.5">
+        <div className="text-xs text-center text-muted-foreground font-medium px-2 py-1.5 w-full">
           {Math.round(zoom * 100)}%
         </div>
         <Button
@@ -184,20 +210,36 @@ export default function FlowCanvasWithConnections({
           variant="ghost"
           onClick={() => handleZoom(-0.1)}
           className="h-9 w-9 hover:bg-muted"
+          title="Zoom out"
         >
           <ZoomOut className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Pan hint */}
-      <div className="absolute bottom-6 left-6 text-xs text-muted-foreground flex items-center gap-1">
-        Cmd + arraste para mover
+      {/* Instructions */}
+      <div className="absolute bottom-6 left-6 text-xs text-muted-foreground space-y-1 pointer-events-none">
+        <div>⌘ + Arraste para mover</div>
+        <div>Roda do mouse para zoom</div>
+        <div>Clique nos blocos para selecionar</div>
       </div>
+
+      {/* Empty State */}
+      {!nodes || nodes.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <div className="text-5xl mb-3 opacity-20">🎯</div>
+            <p className="text-muted-foreground text-sm">Arraste blocos do menu esquerdo para começar</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function FlowNodeV2({ node, isSelected, onSelect, onDrag, onConnectStart, onConnectEnd, isConnecting }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
   const blockColors = {
     start: { bg: 'from-emerald-50 to-emerald-100/50', border: 'border-emerald-300', icon: '▶️', label: 'Início' },
     text: { bg: 'from-blue-50 to-blue-100/50', border: 'border-blue-300', icon: '📝', label: 'Texto' },
@@ -213,6 +255,26 @@ function FlowNodeV2({ node, isSelected, onSelect, onDrag, onConnectStart, onConn
 
   const config = blockColors[node.type] || blockColors.text;
 
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    onSelect();
+    setIsDragging(true);
+    setDragOffset({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    const dx = (e.clientX - dragOffset.x);
+    const dy = (e.clientY - dragOffset.y);
+    onDrag({ x: node.position.x + dx, y: node.position.y + dy });
+    setDragOffset({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   return (
     <div
       style={{
@@ -221,33 +283,24 @@ function FlowNodeV2({ node, isSelected, onSelect, onDrag, onConnectStart, onConn
         top: node.position.y,
         width: 240,
       }}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('nodeId', node.id);
-      }}
-      onDragEnd={(e) => {
-        const newX = node.position.x + (e.clientX - e.screenX) / 1.2;
-        const newY = node.position.y + (e.clientY - e.screenY) / 1.2;
-        onDrag({ x: newX, y: newY });
-      }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
-      className="cursor-grab active:cursor-grabbing"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
     >
       <div
         className={`
           bg-gradient-to-br ${config.bg}
           border-2 ${config.border}
-          rounded-xl p-3 shadow-md hover:shadow-lg
-          transition-all duration-200
-          ${isSelected ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900 shadow-lg' : ''}
+          rounded-xl p-3 shadow-md
+          transition-all duration-150
+          ${isSelected ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900 shadow-xl' : 'hover:shadow-lg'}
+          ${isDragging ? 'shadow-xl' : ''}
         `}
       >
         <div className="flex items-start gap-2.5">
-          <span className="text-xl mt-0.5">{config.icon}</span>
+          <span className="text-lg leading-none">{config.icon}</span>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-sm text-foreground">{node.label}</div>
             {node.data?.question && (
@@ -263,14 +316,14 @@ function FlowNodeV2({ node, isSelected, onSelect, onDrag, onConnectStart, onConn
           </div>
         </div>
 
-        {/* Connection ports */}
-        <div className="absolute -bottom-2.5 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white dark:bg-slate-900 border-2 border-primary rounded-full shadow-md cursor-crosshair" />
+        {/* Connection Ports */}
+        <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white dark:bg-slate-900 border-2 border-primary rounded-full shadow-md cursor-pointer hover:scale-110 transition-transform" />
         <button
           onMouseDown={(e) => {
             e.stopPropagation();
             onConnectStart();
           }}
-          className="absolute top-1/2 -right-2.5 transform -translate-y-1/2 w-5 h-5 bg-white dark:bg-slate-900 border-2 border-primary rounded-full shadow-md hover:bg-primary hover:border-primary transition-colors"
+          className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-5 h-5 bg-white dark:bg-slate-900 border-2 border-primary rounded-full shadow-md hover:scale-110 hover:bg-primary transition-all cursor-crosshair"
           title="Conectar a outro bloco"
         />
       </div>
