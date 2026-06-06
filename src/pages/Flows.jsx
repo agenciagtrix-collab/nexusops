@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
-  Plus, Search, Edit, Trash2, Globe, BarChart3, Pause, Play, Archive, X, MoreVertical
-} from 'lucide-react';
+    Plus, Search, Edit, Trash2, Globe, BarChart3, Pause, Play, Archive, X, MoreVertical, Copy, Check
+  } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +35,16 @@ export default function Flows() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [selectedFlow, setSelectedFlow] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const { data: flows = [] } = useQuery({
     queryKey: ['flows'],
     queryFn: () => base44.entities.Flow.list('-updated_date'),
+  });
+
+  const { data: publishes = [] } = useQuery({
+    queryKey: ['flow-publishes'],
+    queryFn: () => base44.entities.FlowPublish.list(),
   });
 
   const deleteFlow = useMutation({
@@ -70,6 +76,19 @@ export default function Flows() {
     };
     const info = config[status] || config.draft;
     return <Badge className={info.className}>{info.label}</Badge>;
+  };
+
+  const getFlowPublishLink = (flowId) => {
+    const publish = publishes.find(p => p.flow_id === flowId);
+    if (!publish) return null;
+    return `${window.location.origin}/flow/${publish.id}`;
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success('Link copiado!');
   };
 
   return (
@@ -222,6 +241,23 @@ export default function Flows() {
                         <p>Criado: {new Date(flow.created_date).toLocaleDateString('pt-BR')}</p>
                         <p>Modificado: {new Date(flow.updated_date).toLocaleDateString('pt-BR')}</p>
                       </div>
+
+                      {/* Public Link */}
+                      {flow.status === 'active' && getFlowPublishLink(flow.id) && (
+                        <div className="mt-3 p-2 bg-muted rounded-lg flex items-center gap-2 group">
+                          <span className="text-xs truncate text-muted-foreground flex-1">
+                            {getFlowPublishLink(flow.id)}
+                          </span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => copyToClipboard(getFlowPublishLink(flow.id))}
+                          >
+                            {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     <Button
