@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useOutletContext, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -22,12 +22,14 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
-  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2
+  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import TaskGroupManager from '@/components/tasks/TaskGroupManager';
+import AdvancedFilters, { applyFilters } from '@/components/tasks/AdvancedFilters';
 
 const moduleTabItems = [
   { key: 'overview', label: 'Visão Geral', icon: Eye },
@@ -116,6 +118,9 @@ export default function ProjectDetail() {
   };
 
   const [defaultGroupId, setDefaultGroupId] = useState(null);
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [filterLogic, setFilterLogic] = useState('and');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleAddTask = (status, groupId) => {
     setSelectedTask(null);
@@ -153,6 +158,18 @@ export default function ProjectDetail() {
     taskIds.forEach(taskId => deleteTask.mutate(taskId));
     toast.success(`${taskIds.length} tarefa(s) excluída(s)`);
   };
+
+  const filteredTasks = React.useMemo(() => {
+    let result = tasks;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(t => t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q));
+    }
+    if (activeFilters.length > 0) {
+      result = applyFilters(result, activeFilters, filterLogic);
+    }
+    return result;
+  }, [tasks, searchQuery, activeFilters, filterLogic]);
 
   const completedCount = tasks.filter(t => t.status === 'done').length;
   const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
@@ -294,11 +311,42 @@ export default function ProjectDetail() {
                 </Button>
               </div>
 
+              {/* Search + Filters bar */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative flex-1 min-w-[180px] max-w-xs">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar tarefas..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="h-8 pl-8 text-xs"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+                <AdvancedFilters
+                  filters={activeFilters}
+                  onChange={setActiveFilters}
+                  logic={filterLogic}
+                  onLogicChange={setFilterLogic}
+                  users={users}
+                  statuses={project.custom_statuses}
+                />
+                {(activeFilters.length > 0 || searchQuery) && (
+                  <span className="text-xs text-muted-foreground">
+                    {filteredTasks.length} de {tasks.length} tarefas
+                  </span>
+                )}
+              </div>
+
               <Card className="p-4">
                 {taskView === 'groups' && (
                   <TaskGroupManager
                     projectId={id}
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     users={users}
                     onTaskClick={handleTaskClick}
                     onAddTask={handleAddTask}
@@ -306,7 +354,7 @@ export default function ProjectDetail() {
                 )}
                 {taskView === 'kanban' && (
                   <KanbanView
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
                     onAddTask={handleAddTask}
@@ -316,7 +364,7 @@ export default function ProjectDetail() {
                 )}
                 {taskView === 'list' && (
                   <ListView
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     onTaskClick={handleTaskClick}
                     onToggleComplete={handleToggleComplete}
                     users={users}
@@ -324,7 +372,7 @@ export default function ProjectDetail() {
                 )}
                 {taskView === 'table' && (
                   <TableView
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
                     onToggleComplete={handleToggleComplete}
@@ -336,21 +384,21 @@ export default function ProjectDetail() {
                 )}
                 {taskView === 'calendar' && (
                   <CalendarView
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
                   />
                 )}
                 {taskView === 'timeline' && (
                   <TimelineView
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
                   />
                 )}
                 {taskView === 'gantt' && (
                   <GanttView
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     statuses={project.custom_statuses}
                     onTaskClick={handleTaskClick}
                     users={users}

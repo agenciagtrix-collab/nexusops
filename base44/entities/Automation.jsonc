@@ -1,0 +1,84 @@
+{
+  "name": "Automation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da automa\u00e7\u00e3o"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "task_created",
+        "task_status_changed",
+        "task_due_date",
+        "task_assigned",
+        "project_created",
+        "project_status_changed"
+      ],
+      "description": "Gatilho da automa\u00e7\u00e3o"
+    },
+    "trigger_value": {
+      "type": "string",
+      "description": "Valor do gatilho (ex: status espec\u00edfico)"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "send_email",
+        "send_notification",
+        "change_status",
+        "assign_user",
+        "create_task",
+        "move_to_group"
+      ],
+      "description": "A\u00e7\u00e3o a executar"
+    },
+    "action_value": {
+      "type": "string",
+      "description": "Valor da a\u00e7\u00e3o (ex: email destino, novo status)"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Projeto vinculado (vazio = global)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a automa\u00e7\u00e3o est\u00e1 ativa"
+    },
+    "runs": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de execu\u00e7\u00f5es"
+    },
+    "last_run": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima execu\u00e7\u00e3o"
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Condi\u00e7\u00f5es adicionais"
+    }
+  },
+  "required": [
+    "name",
+    "trigger",
+    "action"
+  ]
+}

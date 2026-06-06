@@ -28,6 +28,8 @@ import ClientDetail from '@/pages/ClientDetail';
 import Processes from '@/pages/Processes';
 import Profile from '@/pages/Profile';
 import SuperAdminPanel from '@/pages/SuperAdminPanel';
+import Automations from '@/pages/Automations';
+import ProjectTemplates from '@/pages/ProjectTemplates';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -79,6 +81,8 @@ const AuthenticatedApp = () => {
           <Route path="/processes" element={<Processes />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<SuperAdminPanel />} />
+          <Route path="/automations" element={<Automations />} />
+          <Route path="/templates" element={<ProjectTemplates />} />
         </Route>
       </Route>
 

@@ -18,7 +18,9 @@ import {
   Sliders,
   Workflow,
   UserCircle,
-  ShieldCheck
+  ShieldCheck,
+  Zap,
+  LayoutTemplate
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -28,11 +30,13 @@ import { base44 } from '@/api/base44Client';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: FolderKanban, label: 'Projetos', path: '/projects' },
+  { icon: LayoutTemplate, label: 'Templates', path: '/templates' },
   { icon: CheckSquare, label: 'Minhas Tarefas', path: '/my-tasks' },
   { icon: Users, label: 'Equipes', path: '/teams' },
   { icon: Building2, label: 'Clientes', path: '/clients' },
   { icon: FileText, label: 'Documentos', path: '/documents' },
   { icon: Workflow, label: 'Processos', path: '/processes' },
+  { icon: Zap, label: 'Automações', path: '/automations' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Sliders, label: 'Campos', path: '/custom-fields' },
   { icon: Settings, label: 'Configurações', path: '/settings' },

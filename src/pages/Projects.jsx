@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Search, FolderKanban, Calendar } from 'lucide-react';
+import { Plus, Search, FolderKanban, Calendar, LayoutTemplate } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -54,12 +54,20 @@ export default function Projects() {
         title="Projetos"
         actions={
           canCreate && (
-            <Link to="/projects/new">
-              <Button size="sm" className="gap-1.5">
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Novo Projeto</span>
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/templates">
+                <Button size="sm" variant="outline" className="gap-1.5">
+                  <LayoutTemplate className="w-4 h-4" />
+                  <span className="hidden sm:inline">Templates</span>
+                </Button>
+              </Link>
+              <Link to="/projects/new">
+                <Button size="sm" className="gap-1.5">
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Novo Projeto</span>
+                </Button>
+              </Link>
+            </div>
           )
         }
       />
