@@ -32,6 +32,16 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
     queryFn: () => base44.entities.TaskGroup.filter({ project_id: projectId }, 'order', 50),
     enabled: !!projectId,
   });
+
+  const { data: allProjectTasks = [] } = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => base44.entities.Task.filter({ project_id: projectId }, 'title', 200),
+    enabled: !!projectId,
+  });
+
+  const pendingDeps = (form.dependencies || [])
+    .map(id => allProjectTasks.find(t => t.id === id))
+    .filter(t => t && t.status !== 'done');
   const statusList = statuses?.length > 0
     ? statuses.map(s => ({ name: s.name, key: s.name.toLowerCase().replace(/\s/g, '_'), color: s.color }))
     : defaultStatuses;
@@ -112,6 +122,10 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
 
   const saveForm = () => {
     if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
+    if ((form.status === 'done') && pendingDeps.length > 0) {
+      toast.error(`Dependências pendentes: ${pendingDeps.map(t => t.title).join(', ')} precisam ser concluídas primeiro.`);
+      return;
+    }
     onSave({
       ...form,
       estimated_hours: form.estimated_hours ? Number(form.estimated_hours) : undefined,
@@ -122,6 +136,10 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
   const handleSubmit = (e) => {
     e.preventDefault();
     saveForm();
+  };
+
+  const handleRecurrenceChange = (value) => {
+    setForm(prev => ({ ...prev, is_recurring: value !== '', recurrence_rule: value }));
   };
 
   const addSubtask = () => {
@@ -296,16 +314,25 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
               <Button type="button" variant="outline" size="sm" onClick={addSubtask}><Plus className="w-4 h-4" /></Button>
             </div>
             {(form.subtasks || []).length > 0 && (
-              <div className="space-y-1.5 mt-2">
-                {form.subtasks.map((sub, i) => (
-                  <div key={i} className="flex items-center gap-2 group">
-                    <Checkbox checked={sub.done} onCheckedChange={() => toggleSubtask(i)} />
-                    <span className={`text-sm flex-1 ${sub.done ? 'line-through text-muted-foreground' : ''}`}>{sub.text}</span>
-                    <button type="button" onClick={() => removeSubtask(i)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
-                    </button>
-                  </div>
-                ))}
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{form.subtasks.filter(s => s.done).length}/{form.subtasks.length} concluídas</span>
+                  <span>{Math.round((form.subtasks.filter(s => s.done).length / form.subtasks.length) * 100)}%</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${Math.round((form.subtasks.filter(s => s.done).length / form.subtasks.length) * 100)}%` }} />
+                </div>
+                <div className="space-y-1.5">
+                  {form.subtasks.map((sub, i) => (
+                    <div key={i} className="flex items-center gap-2 group">
+                      <Checkbox checked={sub.done} onCheckedChange={() => toggleSubtask(i)} />
+                      <span className={`text-sm flex-1 ${sub.done ? 'line-through text-muted-foreground' : ''}`}>{sub.text}</span>
+                      <button type="button" onClick={() => removeSubtask(i)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -358,22 +385,22 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
           {/* Recorrência */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5"><RefreshCw className="w-4 h-4" /> Recorrência</Label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => updateField('is_recurring', !form.is_recurring)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${form.is_recurring ? 'bg-primary' : 'bg-muted'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.is_recurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
-              </button>
-              <span className="text-sm">{form.is_recurring ? 'Ativada' : 'Desativada'}</span>
-            </div>
+            <Select value={form.recurrence_rule || ''} onValueChange={handleRecurrenceChange}>
+              <SelectTrigger><SelectValue placeholder="Sem recorrência" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Sem recorrência</SelectItem>
+                <SelectItem value="Diariamente">Diariamente</SelectItem>
+                <SelectItem value="Semanalmente">Semanalmente</SelectItem>
+                <SelectItem value="Quinzenalmente">Quinzenalmente</SelectItem>
+                <SelectItem value="Mensalmente">Mensalmente</SelectItem>
+                <SelectItem value="Trimestralmente">Trimestralmente</SelectItem>
+                <SelectItem value="Anualmente">Anualmente</SelectItem>
+              </SelectContent>
+            </Select>
             {form.is_recurring && (
-              <Input
-                value={form.recurrence_rule}
-                onChange={e => updateField('recurrence_rule', e.target.value)}
-                placeholder="Ex: Toda segunda-feira, Mensalmente..."
-              />
+              <p className="text-xs text-primary flex items-center gap-1.5">
+                <RefreshCw className="w-3 h-3" /> Esta tarefa se repetirá {(form.recurrence_rule || '').toLowerCase()} após ser concluída.
+              </p>
             )}
           </div>
 
@@ -468,6 +495,12 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
 
         {/* Tab: Dependencies */}
         <TabsContent value="deps" className="mt-0 space-y-4">
+          {pendingDeps.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+              <span className="shrink-0">⚠️</span>
+              <span><strong>{pendingDeps.length}</strong> dependência(s) pendente(s). Não será possível concluir esta tarefa até que sejam finalizadas.</span>
+            </div>
+          )}
           <DependencySelector
             projectId={projectId}
             currentTaskId={task?.id}

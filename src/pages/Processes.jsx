@@ -30,7 +30,7 @@ const categoryColors = {
   financeiro: 'bg-orange-100 text-orange-700',
 };
 
-function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
+function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle, onUseInProject }) {
   return (
     <Card className="p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -110,7 +110,7 @@ function ProcessCard({ process, onEdit, onDuplicate, onDelete, onToggle }) {
           </span>
         </div>
         <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5"
-          onClick={() => { setUseProcess(process); setSelectedProjectId(''); setUseDialogOpen(true); }}>
+          onClick={() => onUseInProject(process)}>
           <FolderKanban className="w-3 h-3" /> Usar em Projeto
         </Button>
       </div>
@@ -402,6 +402,7 @@ export default function Processes() {
                   onDuplicate={handleDuplicate}
                   onDelete={(id) => deleteMutation.mutate(id)}
                   onToggle={handleToggle}
+                  onUseInProject={(p) => { setUseProcess(p); setSelectedProjectId(''); setUseDialogOpen(true); }}
                 />
               ))}
             </div>

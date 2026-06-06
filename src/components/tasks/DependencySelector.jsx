@@ -59,6 +59,16 @@ export default function DependencySelector({ projectId, currentTaskId, value = [
         </div>
       )}
 
+      {/* Blocked warning */}
+      {selectedTasks.some(t => t.status !== 'done') && (
+        <div className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-2 rounded-lg">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span>
+            <strong>{selectedTasks.filter(t => t.status !== 'done').length}</strong> dependência(s) ainda não concluída(s). Esta tarefa pode estar bloqueada.
+          </span>
+        </div>
+      )}
+
       {/* Search to add */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />

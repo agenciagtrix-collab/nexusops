@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Upload, Paperclip, FileText, Image, Film, FileSpreadsheet, File, Trash2, ExternalLink, Loader2 } from 'lucide-react';
+import { Upload, Paperclip, FileText, Image, Film, FileSpreadsheet, File, Trash2, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import FilePreviewModal from '@/components/ui/FilePreviewModal';
 
 function getFileIcon(type = '') {
   if (type.startsWith('image/')) return { Icon: Image, color: 'text-green-600', bg: 'bg-green-50' };
@@ -16,6 +17,7 @@ function getFileIcon(type = '') {
 
 export default function TaskAttachments({ attachments = [], onChange }) {
   const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const handleUpload = async (e) => {
     const files = e.target.files;
@@ -64,11 +66,9 @@ export default function TaskAttachments({ attachments = [], onChange }) {
                 </div>
                 <span className="text-sm flex-1 truncate">{att.name}</span>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <a href={att.url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                    </Button>
-                  </a>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreviewFile(att)}>
+                    <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeAttachment(i)}>
                     <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                   </Button>
@@ -84,6 +84,7 @@ export default function TaskAttachments({ attachments = [], onChange }) {
           <p className="text-xs text-muted-foreground">Clique ou arraste arquivos aqui</p>
         </label>
       )}
+      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   );
 }

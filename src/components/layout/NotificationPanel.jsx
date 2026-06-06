@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
@@ -7,6 +7,7 @@ import { Bell, CheckCheck, X, FolderKanban, CheckSquare, MessageSquare, Users, A
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 const typeConfig = {
@@ -26,11 +27,27 @@ export default function NotificationPanel() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsubscribe = base44.entities.Notification.subscribe((event) => {
+      if (event.data?.user_id === user.id) {
+        queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+        if (event.type === 'create') {
+          toast.info(event.data.title || 'Nova notificação', {
+            description: event.data.message,
+            duration: 4000,
+          });
+        }
+      }
+    });
+    return unsubscribe;
+  }, [user?.id]);
+
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: () => user ? base44.entities.Notification.filter({ user_id: user.id }, '-created_date', 30) : [],
     enabled: !!user,
-    refetchInterval: 30000,
+    refetchInterval: 60000,
   });
 
   const markRead = useMutation({

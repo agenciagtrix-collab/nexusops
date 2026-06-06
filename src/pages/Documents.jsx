@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  FileText, Image, Film, FileSpreadsheet, File, Upload, ExternalLink,
-  Search, FolderOpen, Loader2, Grid, List as ListIcon, Trash2
+  FileText, Image, Film, FileSpreadsheet, File, Upload,
+  Search, FolderOpen, Loader2, Grid, List as ListIcon, Trash2, Eye
 } from 'lucide-react';
+import FilePreviewModal from '@/components/ui/FilePreviewModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -39,6 +40,7 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [filterContext, setFilterContext] = useState('all');
+  const [previewFile, setPreviewFile] = useState(null);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents'],
@@ -200,25 +202,25 @@ export default function Documents() {
                 const { Icon: FileIcon, color, bg } = getFileIcon(file.type);
                 const projName = getProjectName(file);
                 return (
-                  <Card key={file.id} className="p-4 hover:shadow-md transition-shadow group relative">
-                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="block">
-                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-3 mx-auto", bg)}>
-                        <FileIcon className={cn("w-6 h-6", color)} />
-                      </div>
-                      <p className="text-xs font-medium text-center truncate">{file.name}</p>
-                      {file.context && (
-                        <p className="text-xs text-muted-foreground text-center mt-0.5">{contextLabels[file.context] || file.context}</p>
-                      )}
-                      {projName && (
-                        <p className="text-xs text-primary text-center mt-0.5 truncate">{projName}</p>
-                      )}
-                    </a>
-                    <button
-                      onClick={() => deleteMutation.mutate(file.id)}
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1 rounded"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <Card key={file.id} className="p-4 hover:shadow-md transition-shadow group relative cursor-pointer" onClick={() => setPreviewFile(file)}>
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-3 mx-auto", bg)}>
+                      <FileIcon className={cn("w-6 h-6", color)} />
+                    </div>
+                    <p className="text-xs font-medium text-center truncate">{file.name}</p>
+                    {file.context && (
+                      <p className="text-xs text-muted-foreground text-center mt-0.5">{contextLabels[file.context] || file.context}</p>
+                    )}
+                    {projName && (
+                      <p className="text-xs text-primary text-center mt-0.5 truncate">{projName}</p>
+                    )}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                      <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-primary" onClick={e => { e.stopPropagation(); setPreviewFile(file); }}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive" onClick={e => { e.stopPropagation(); deleteMutation.mutate(file.id); }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </Card>
                 );
               })}
@@ -259,9 +261,9 @@ export default function Documents() {
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-1">
-                              <a href={file.url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                              </a>
+                              <button onClick={() => setPreviewFile(file)} className="text-muted-foreground hover:text-primary transition-colors">
+                                <Eye className="w-4 h-4" />
+                              </button>
                               <button onClick={() => deleteMutation.mutate(file.id)} className="text-muted-foreground hover:text-destructive transition-colors ml-1">
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -277,6 +279,7 @@ export default function Documents() {
           )}
         </div>
       </div>
+      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </>
   );
 }

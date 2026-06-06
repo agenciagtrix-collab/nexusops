@@ -27,6 +27,12 @@ Deno.serve(async (req) => {
       } else if (rule.includes('mês') || rule.includes('mes') || rule.includes('mensal') || rule.includes('month')) {
         nextDue = new Date(dueDate);
         nextDue.setMonth(nextDue.getMonth() + 1);
+      } else if (rule.includes('trimest')) {
+        nextDue = new Date(dueDate);
+        nextDue.setMonth(nextDue.getMonth() + 3);
+      } else if (rule.includes('anual') || rule.includes('anualmente') || rule.includes('year')) {
+        nextDue = new Date(dueDate);
+        nextDue.setFullYear(nextDue.getFullYear() + 1);
       } else {
         continue;
       }
