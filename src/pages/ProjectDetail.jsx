@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
+import TaskGroupManager from '@/components/tasks/TaskGroupManager';
 
 const moduleTabItems = [
   { key: 'overview', label: 'Visão Geral', icon: Eye },
@@ -39,6 +40,7 @@ const moduleTabItems = [
 ];
 
 const taskViewItems = [
+  { key: 'groups', label: 'Grupos', icon: List },
   { key: 'kanban', label: 'Kanban', icon: LayoutGrid },
   { key: 'list', label: 'Lista', icon: List },
   { key: 'table', label: 'Tabela', icon: Table2 },
@@ -54,7 +56,7 @@ export default function ProjectDetail() {
   const queryClient = useQueryClient();
   const { canCreate, canDelete } = usePermissions();
   const [moduleTab, setModuleTab] = useState('overview');
-  const [taskView, setTaskView] = useState('kanban');
+  const [taskView, setTaskView] = useState('groups');
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [defaultStatus, setDefaultStatus] = useState('todo');
@@ -104,7 +106,7 @@ export default function ProjectDetail() {
     if (selectedTask?.id) {
       updateTask.mutate({ taskId: selectedTask.id, data });
     } else {
-      createTask.mutate({ ...data, project_id: id });
+      createTask.mutate({ ...data, project_id: id, group_id: defaultGroupId || data.group_id });
     }
   };
 
@@ -113,9 +115,12 @@ export default function ProjectDetail() {
     setTaskDialogOpen(true);
   };
 
-  const handleAddTask = (status) => {
+  const [defaultGroupId, setDefaultGroupId] = useState(null);
+
+  const handleAddTask = (status, groupId) => {
     setSelectedTask(null);
     setDefaultStatus(status || 'todo');
+    setDefaultGroupId(groupId || null);
     setTaskDialogOpen(true);
   };
 
@@ -290,6 +295,15 @@ export default function ProjectDetail() {
               </div>
 
               <Card className="p-4">
+                {taskView === 'groups' && (
+                  <TaskGroupManager
+                    projectId={id}
+                    tasks={tasks}
+                    users={users}
+                    onTaskClick={handleTaskClick}
+                    onAddTask={handleAddTask}
+                  />
+                )}
                 {taskView === 'kanban' && (
                   <KanbanView
                     tasks={tasks}
@@ -351,7 +365,7 @@ export default function ProjectDetail() {
       <TaskDialog
         open={taskDialogOpen}
         onClose={setTaskDialogOpen}
-        task={selectedTask || { status: defaultStatus }}
+        task={selectedTask || { status: defaultStatus, group_id: defaultGroupId }}
         projectId={id}
         statuses={project.custom_statuses}
         onSave={handleSaveTask}

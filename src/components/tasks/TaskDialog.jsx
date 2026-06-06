@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Save, X, MessageSquare, Clock, RefreshCw, Link2, GitMerge } from 'lucide-react';
+import { Plus, Trash2, Save, X, MessageSquare, Clock, RefreshCw, Link2, GitMerge, Paperclip } from 'lucide-react';
 import DependencySelector from '@/components/tasks/DependencySelector';
 import TaskHistoryTab from '@/components/tasks/TaskHistoryTab';
+import TaskAttachments from '@/components/tasks/TaskAttachments';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 import CommentSection from '@/components/tasks/CommentSection';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 const defaultStatuses = [
   { name: 'A Fazer', key: 'todo' },
@@ -23,6 +26,12 @@ const defaultStatuses = [
 
 export default function TaskDialog({ open, onClose, task, projectId, statuses, onSave, users = [] }) {
   const isEdit = !!task?.id;
+
+  const { data: taskGroups = [] } = useQuery({
+    queryKey: ['task-groups', projectId],
+    queryFn: () => base44.entities.TaskGroup.filter({ project_id: projectId }, 'order', 50),
+    enabled: !!projectId,
+  });
   const statusList = statuses?.length > 0
     ? statuses.map(s => ({ name: s.name, key: s.name.toLowerCase().replace(/\s/g, '_') }))
     : defaultStatuses;
@@ -56,13 +65,15 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
         subtasks: task.subtasks || [],
         is_recurring: task.is_recurring || false,
         recurrence_rule: task.recurrence_rule || '',
+        attachments: task.attachments || [],
+        group_id: task.group_id || '',
         project_id: projectId,
       });
     } else {
       setForm({
         title: '', description: '', status: 'todo', priority: 'medium',
         start_date: '', due_date: '', estimated_hours: '', assignee_ids: [],
-        tags: [], checklist: [], subtasks: [], logged_hours: '', project_id: projectId,
+        tags: [], checklist: [], subtasks: [], logged_hours: '', attachments: [], group_id: '', project_id: projectId,
       });
     }
     setActiveTab('details');
@@ -138,11 +149,14 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`w-full grid mb-4 ${isEdit ? 'grid-cols-5' : 'grid-cols-4'}`}>
+          <TabsList className={`w-full grid mb-4 ${isEdit ? 'grid-cols-6' : 'grid-cols-5'}`}>
             <TabsTrigger value="details">Detalhes</TabsTrigger>
             <TabsTrigger value="extras">Checklist</TabsTrigger>
             <TabsTrigger value="time" className="gap-1">
               <Clock className="w-3 h-3" /> Tempo
+            </TabsTrigger>
+            <TabsTrigger value="attachments" className="gap-1">
+              <Paperclip className="w-3 h-3" /> Anexos
             </TabsTrigger>
             <TabsTrigger value="deps" className="gap-1">
               <GitMerge className="w-3 h-3" /> Deps
@@ -205,6 +219,20 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
               <Input type="number" value={form.estimated_hours} onChange={e => updateField('estimated_hours', e.target.value)} placeholder="0" />
             </div>
           </div>
+
+          {/* Group selector */}
+          {taskGroups.length > 0 && (
+            <div className="space-y-2">
+              <Label>Grupo</Label>
+              <Select value={form.group_id || ''} onValueChange={v => updateField('group_id', v === '__none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Sem grupo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem grupo</SelectItem>
+                  {taskGroups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Assignees */}
           <div className="space-y-2">
@@ -400,6 +428,21 @@ export default function TaskDialog({ open, onClose, task, projectId, statuses, o
             />
           </div>
 
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
+            <Button type="button" className="gap-1.5" onClick={saveForm}>
+              <Save className="w-4 h-4" />
+              {isEdit ? 'Salvar' : 'Criar Tarefa'}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* Tab: Attachments */}
+        <TabsContent value="attachments" className="mt-0 space-y-4">
+          <TaskAttachments
+            attachments={form.attachments || []}
+            onChange={(v) => updateField('attachments', v)}
+          />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onClose(false)}>Cancelar</Button>
             <Button type="button" className="gap-1.5" onClick={saveForm}>
