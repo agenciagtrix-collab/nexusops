@@ -61,7 +61,10 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
   };
 
   const handleRenameGroup = (group) => {
-    if (!editingName.trim()) return;
+    if (!editingName.trim()) {
+      toast.error('O nome do grupo não pode ser vazio');
+      return;
+    }
     updateGroup.mutate({ id: group.id, data: { name: editingName.trim() } });
   };
 
@@ -111,7 +114,9 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
                 </div>
               ) : (
                 <>
-                  <span className="text-sm font-semibold flex-1">{group.name}</span>
+                  <span className="text-sm font-semibold flex-1" style={{ color: group.name ? 'inherit' : 'var(--muted-foreground)' }}>
+                    {group.name || '(Sem nome)'}
+                  </span>
                   <span className="text-xs text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded-full">
                     {groupTasks.length}
                   </span>
