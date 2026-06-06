@@ -85,8 +85,14 @@ Tipos de blocos disponíveis por categoria:
                 id: { type: 'string' },
                 type: { type: 'string' },
                 label: { type: 'string' },
-                position: { type: 'object', properties: { x: { type: 'number' }, y: { type: 'number' } } },
-                data: { type: 'object' },
+                position: { 
+                  type: 'object', 
+                  properties: { 
+                    x: { type: 'number' }, 
+                    y: { type: 'number' } 
+                  },
+                  required: ['x', 'y'],
+                },
               },
               required: ['id', 'type', 'label', 'position'],
             },
