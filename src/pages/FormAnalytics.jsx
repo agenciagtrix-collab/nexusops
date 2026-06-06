@@ -45,7 +45,7 @@ export default function FormAnalytics() {
   const COLORS = ['#6366f1', '#ec4899', '#f59e0b'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Analytics</h1>
