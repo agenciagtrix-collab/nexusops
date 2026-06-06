@@ -1,0 +1,80 @@
+{
+  "name": "ProjectShare",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "ID do projeto"
+    },
+    "token": {
+      "type": "string",
+      "description": "Token \u00fanico de acesso"
+    },
+    "label": {
+      "type": "string",
+      "description": "Nome/r\u00f3tulo do link"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "client_email": {
+      "type": "string",
+      "description": "Email do cliente"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o link est\u00e1 ativo"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de expira\u00e7\u00e3o (opcional)"
+    },
+    "access_count": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de acessos"
+    },
+    "last_accessed": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltimo acesso"
+    },
+    "visibility_settings": {
+      "type": "object",
+      "description": "Configura\u00e7\u00f5es de visibilidade do portal",
+      "properties": {
+        "show_progress": {
+          "type": "boolean"
+        },
+        "show_tasks": {
+          "type": "boolean"
+        },
+        "show_assignees": {
+          "type": "boolean"
+        },
+        "show_due_dates": {
+          "type": "boolean"
+        },
+        "show_files": {
+          "type": "boolean"
+        },
+        "show_timeline": {
+          "type": "boolean"
+        },
+        "show_next_steps": {
+          "type": "boolean"
+        },
+        "show_dashboard": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "required": [
+    "project_id",
+    "token"
+  ]
+}

@@ -52,6 +52,11 @@
         "type": "string"
       },
       "description": "Tags"
+    },
+    "shared_with_client": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vis\u00edvel no portal do cliente"
     }
   },
   "required": [

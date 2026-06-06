@@ -32,6 +32,7 @@ import Automations from '@/pages/Automations';
 import AutomationBuilder from '@/pages/AutomationBuilder';
 import ProjectTemplates from '@/pages/ProjectTemplates';
 import Contracts from '@/pages/Contracts';
+import ClientPortal from '@/pages/ClientPortal';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -89,6 +90,9 @@ const AuthenticatedApp = () => {
           <Route path="/contracts" element={<Contracts />} />
         </Route>
       </Route>
+
+      {/* Public route — no auth required */}
+      <Route path="/share/:token" element={<ClientPortal />} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

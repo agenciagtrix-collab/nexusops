@@ -22,7 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
-  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X
+  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X, Globe
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -31,6 +31,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import TaskGroupManager from '@/components/tasks/TaskGroupManager';
 import AdvancedFilters, { applyFilters } from '@/components/tasks/AdvancedFilters';
 import ExportPDFButton from '@/components/reports/ExportPDFButton';
+import ShareDialog from '@/components/share/ShareDialog';
 
 const moduleTabItems = [
   { key: 'overview', label: 'Visão Geral', icon: Eye },
@@ -118,6 +119,7 @@ export default function ProjectDetail() {
     setTaskDialogOpen(true);
   };
 
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [defaultGroupId, setDefaultGroupId] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [filterLogic, setFilterLogic] = useState('and');
@@ -198,6 +200,10 @@ export default function ProjectDetail() {
               <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Projetos</span>
             </Button>
             <ExportPDFButton projectId={id} label="PDF" size="sm" />
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShareDialogOpen(true)}>
+              <Globe className="w-4 h-4" />
+              <span className="hidden sm:inline">Compartilhar</span>
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${id}/edit`)}>
               <Settings className="w-4 h-4" />
             </Button>
@@ -411,6 +417,13 @@ export default function ProjectDetail() {
           )}
         </div>
       </div>
+
+      <ShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        projectId={id}
+        projectName={project?.name}
+      />
 
       <TaskDialog
         open={taskDialogOpen}
