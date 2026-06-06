@@ -17,6 +17,8 @@ Deno.serve(async (req) => {
     }
 
     // Call InvokeLLM to generate flow structure
+    console.log('Generating flow with prompt:', prompt.substring(0, 100) + '...');
+    
     const aiResponse = await base44.integrations.Core.InvokeLLM({
       prompt: `
 Você é um especialista em construir fluxos inteligentes, jornadas de usuário e automações profissionais.
@@ -114,6 +116,14 @@ Tipos de blocos disponíveis por categoria:
     })) || [];
 
     const edges = aiResponse.edges || [];
+
+    if (!nodes || nodes.length === 0) {
+      return Response.json({ 
+        error: 'A IA não conseguiu gerar blocos válidos. Tente descrever o fluxo com mais detalhes.' 
+      }, { status: 400 });
+    }
+
+    console.log('Flow generated successfully:', nodes.length, 'nodes,', edges.length, 'edges');
 
     return Response.json({
       nodes,

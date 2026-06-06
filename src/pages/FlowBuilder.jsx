@@ -39,6 +39,8 @@ export default function FlowBuilder() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectFromNodeId, setConnectFromNodeId] = useState(null);
   const [highlightedNodeId, setHighlightedNodeId] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
   const blockEmojis = {
     start: '▶️', text: '📝', question: '❓', email: '✉️', phone: '📱',
@@ -167,6 +169,9 @@ export default function FlowBuilder() {
   const handleGenerateWithAI = async () => {
     if (!aiPrompt.trim()) return;
 
+    setAiLoading(true);
+    setAiError(null);
+
     try {
       const response = await base44.functions.invoke('generateFlowWithAI', {
         prompt: aiPrompt,
@@ -182,11 +187,13 @@ export default function FlowBuilder() {
         setShowAIGenerator(false);
         setAiPrompt('');
       } else {
-        alert('Erro: Resposta inválida da IA. Tente novamente.');
+        setAiError('Resposta inválida da IA. Tente novamente com uma descrição mais detalhada.');
       }
     } catch (error) {
-      alert('Erro ao gerar fluxo com IA: ' + error.message);
+      setAiError(`Erro: ${error.message || 'Não foi possível gerar o fluxo. Tente novamente.'}`);
       console.error('Erro ao gerar com IA:', error);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -323,21 +330,41 @@ export default function FlowBuilder() {
                   placeholder="Ex: Crie um fluxo de briefing para uma agência de marketing com perguntas sobre serviços, orçamento e timeline"
                   rows={5}
                   className="w-full p-3 border rounded-lg text-sm"
+                  disabled={aiLoading}
                 />
               </div>
+              {aiError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
+                  {aiError}
+                </div>
+              )}
               <div className="flex gap-2 justify-end">
                 <Button
-                  onClick={() => setShowAIGenerator(false)}
+                  onClick={() => {
+                    setShowAIGenerator(false);
+                    setAiError(null);
+                  }}
                   variant="outline"
+                  disabled={aiLoading}
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleGenerateWithAI}
                   className="gap-2"
+                  disabled={aiLoading || !aiPrompt.trim()}
                 >
-                  <Wand2 className="w-4 h-4" />
-                  Gerar
+                  {aiLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      Gerar
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
