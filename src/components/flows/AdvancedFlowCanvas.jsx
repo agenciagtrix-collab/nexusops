@@ -112,6 +112,7 @@ export default function AdvancedFlowCanvas({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onClick={handleCanvasClick}
+        onDragOver={(e) => e.preventDefault()}
         className="relative w-full h-full overflow-hidden"
         style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
       >

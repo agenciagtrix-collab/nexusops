@@ -61,7 +61,7 @@ export default function FlowNodeV2({
 
   const handlePortMouseDown = (e) => {
     e.stopPropagation();
-    onConnectStart();
+    onConnectStart(node.id);
   };
 
   return (
@@ -119,8 +119,8 @@ export default function FlowNodeV2({
           title="Conectar de outro bloco aqui"
           onMouseUp={(e) => {
             e.stopPropagation();
-            if (isConnecting) {
-              onConnectEnd(node.id);
+            if (isConnecting && connectFromNodeId !== node.id) {
+              onConnectEnd(connectFromNodeId, node.id);
             }
           }}
         />

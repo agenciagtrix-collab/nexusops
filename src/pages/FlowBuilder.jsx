@@ -142,18 +142,19 @@ export default function FlowBuilder() {
         flowType: flow.type,
       });
 
-      if (response.data?.nodes && response.data?.edges) {
+      if (response?.data?.nodes && response?.data?.edges) {
         setFlow(prev => ({
           ...prev,
-          ...response.data,
           nodes: response.data.nodes,
           edges: response.data.edges,
         }));
+        setShowAIGenerator(false);
+        setAiPrompt('');
+      } else {
+        alert('Erro: Resposta inválida da IA. Tente novamente.');
       }
-
-      setShowAIGenerator(false);
-      setAiPrompt('');
     } catch (error) {
+      alert('Erro ao gerar fluxo com IA: ' + error.message);
       console.error('Erro ao gerar com IA:', error);
     }
   };
@@ -227,7 +228,10 @@ export default function FlowBuilder() {
         {/* Canvas Area */}
         <div
           className="flex-1 relative"
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
           onDrop={handleAddBlock}
         >
           <AdvancedFlowCanvas
