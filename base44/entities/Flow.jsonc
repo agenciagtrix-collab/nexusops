@@ -1,0 +1,167 @@
+{
+  "name": "Flow",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do fluxo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do fluxo"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "form",
+        "survey",
+        "quiz",
+        "chat",
+        "diagnostic",
+        "intake",
+        "journey"
+      ],
+      "default": "journey",
+      "description": "Tipo de fluxo"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Vers\u00e3o do fluxo"
+    },
+    "nodes": {
+      "type": "array",
+      "description": "N\u00f3s/blocos do fluxo",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "position": {
+            "type": "object"
+          },
+          "config": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Conex\u00f5es entre n\u00f3s",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "startNode": {
+      "type": "string",
+      "description": "ID do n\u00f3 inicial"
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "showProgress": {
+          "type": "boolean",
+          "default": true
+        },
+        "allowGoBack": {
+          "type": "boolean",
+          "default": true
+        },
+        "theme": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string",
+          "default": "pt-BR"
+        }
+      }
+    },
+    "integrations": {
+      "type": "object",
+      "properties": {
+        "createClient": {
+          "type": "boolean"
+        },
+        "createProject": {
+          "type": "boolean"
+        },
+        "createTasks": {
+          "type": "boolean"
+        },
+        "triggerAutomation": {
+          "type": "boolean"
+        },
+        "triggerAgent": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "views": {
+          "type": "number"
+        },
+        "starts": {
+          "type": "number"
+        },
+        "completions": {
+          "type": "number"
+        },
+        "avgTime": {
+          "type": "number"
+        }
+      }
+    },
+    "template": {
+      "type": "string",
+      "description": "Template base se foi criado de um template"
+    },
+    "aiGenerated": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

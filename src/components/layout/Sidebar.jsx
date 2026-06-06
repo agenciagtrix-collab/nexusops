@@ -43,6 +43,7 @@ const navItems = [
     { label: 'Todos', path: '/forms' },
     { label: 'Templates', path: '/form-templates' },
     { label: 'IA Criadora', path: '/form-ai-creator' },
+    { label: 'Fluxos Visuais', path: '/flows' },
   ]},
   { icon: Workflow, label: 'Processos', path: '/processes' },
   { icon: Zap, label: 'Automações', path: '/automation-builder' },

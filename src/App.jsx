@@ -43,6 +43,8 @@ import FormAnalytics from '@/pages/FormAnalytics';
 import FormTemplates from '@/pages/FormTemplates';
 import FormAICreator from '@/pages/FormAICreator';
 import FormShare from '@/pages/FormShare';
+import FlowBuilder from '@/pages/FlowBuilder';
+import Flows from '@/pages/Flows';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -110,6 +112,9 @@ const AuthenticatedApp = () => {
           <Route path="/forms/:id/analytics" element={<FormAnalytics />} />
           <Route path="/form-templates" element={<FormTemplates />} />
           <Route path="/form-ai-creator" element={<FormAICreator />} />
+          <Route path="/flows" element={<Flows />} />
+          <Route path="/flows/new" element={<FlowBuilder />} />
+          <Route path="/flows/:id/edit" element={<FlowBuilder />} />
         </Route>
       </Route>
 
