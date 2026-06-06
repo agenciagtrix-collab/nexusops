@@ -119,7 +119,7 @@ export default function TaskGroupManager({ projectId, tasks = [], users = [], on
                   <span className="text-xs text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded-full">
                     {groupTasks.length}
                   </span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-1 transition-opacity ml-1" onClick={e => e.stopPropagation()}>
                     <Button
                       variant="ghost" size="icon" className="h-6 w-6"
                       onClick={() => { setEditingGroupId(group.id); setEditingName(group.name); }}
