@@ -22,7 +22,7 @@ export default function AgentSwitcher({ agents, selectedIds, isCouncilMode, onSe
   const categories = [...new Set(agents.map(a => a.category))];
 
   return (
-    <div className="w-72 flex-shrink-0 border-r border-border bg-card flex flex-col overflow-hidden">
+    <div className="w-72 flex-shrink-0 border-r border-border bg-card flex flex-col overflow-hidden" style={{ backgroundColor: 'hsl(var(--card))' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <p className="text-xs font-bold text-foreground">Especialistas</p>
@@ -44,7 +44,7 @@ export default function AgentSwitcher({ agents, selectedIds, isCouncilMode, onSe
       </div>
 
       {isCouncilMode && (
-        <div className="mx-3 mt-3 p-2.5 rounded-xl bg-violet-50 border border-violet-200">
+        <div className="mx-3 mt-3 p-2.5 rounded-xl bg-violet-50 border border-violet-200" style={{ backgroundColor: 'rgb(245 243 255)' }}>
           <p className="text-[11px] text-violet-700 font-medium">Modo Conselho ativo — selecione múltiplos especialistas</p>
           <p className="text-[10px] text-violet-500 mt-0.5">Cada agente responderá separadamente e depois haverá síntese</p>
           {selectedIds.length > 0 && (
