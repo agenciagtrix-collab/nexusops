@@ -3,12 +3,10 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, Check, QrCode } from 'lucide-react';
-import QRCode from 'qrcode.react';
+import { Copy, Check } from 'lucide-react';
 
 export default function ShareFormDialog({ form, onClose }) {
   const [copied, setCopied] = useState(false);
-  const [showQR, setShowQR] = useState(false);
 
   const shareUrl = `${window.location.origin}/form/${form.id}`;
   const embedCode = `<iframe src="${shareUrl}" width="100%" height="800" frameborder="0"></iframe>`;
@@ -41,29 +39,6 @@ export default function ShareFormDialog({ form, onClose }) {
           <p className="text-xs text-muted-foreground">
             Compartilhe este link para que pessoas respondam o formulário
           </p>
-        </CardContent>
-      </Card>
-
-      {/* QR Code */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">QR Code</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {showQR ? (
-            <div className="flex justify-center p-4 bg-muted rounded-lg">
-              <QRCode value={shareUrl} size={200} />
-            </div>
-          ) : (
-            <Button
-              onClick={() => setShowQR(true)}
-              variant="outline"
-              className="w-full gap-2"
-            >
-              <QrCode className="w-4 h-4" />
-              Gerar QR Code
-            </Button>
-          )}
         </CardContent>
       </Card>
 
