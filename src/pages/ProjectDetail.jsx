@@ -22,7 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
-  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X, Globe
+  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X, Globe, Brain
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ import TaskGroupManager from '@/components/tasks/TaskGroupManager';
 import AdvancedFilters, { applyFilters } from '@/components/tasks/AdvancedFilters';
 import ExportPDFButton from '@/components/reports/ExportPDFButton';
 import ShareDialog from '@/components/share/ShareDialog';
+import ProjectAITab from '@/components/project/ProjectAITab';
 
 const moduleTabItems = [
   { key: 'overview', label: 'Visão Geral', icon: Eye },
@@ -41,6 +42,7 @@ const moduleTabItems = [
   { key: 'clients', label: 'Cliente', icon: Building2 },
   { key: 'reports', label: 'Relatórios', icon: BarChart2 },
   { key: 'history', label: 'Histórico', icon: Activity },
+  { key: 'ai', label: 'Agentes IA', icon: Brain },
 ];
 
 const taskViewItems = [
@@ -288,6 +290,10 @@ export default function ProjectDetail() {
 
           {moduleTab === 'history' && (
             <ProjectHistoryTab projectId={id} />
+          )}
+
+          {moduleTab === 'ai' && (
+            <ProjectAITab project={project} tasks={tasks} users={users} />
           )}
 
           {moduleTab === 'tasks' && (

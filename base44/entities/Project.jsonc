@@ -65,16 +65,13 @@
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Tags"
+      }
     },
     "notes": {
-      "type": "string",
-      "description": "Observa\u00e7\u00f5es"
+      "type": "string"
     },
     "color": {
-      "type": "string",
-      "description": "Cor do projeto"
+      "type": "string"
     },
     "custom_statuses": {
       "type": "array",
@@ -91,16 +88,20 @@
             "type": "number"
           }
         }
-      },
-      "description": "Status personalizados do projeto"
+      }
     },
     "custom_fields": {
-      "type": "object",
-      "description": "Campos personalizados"
+      "type": "object"
     },
     "progress": {
-      "type": "number",
-      "description": "Percentual de progresso"
+      "type": "number"
+    },
+    "agent_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos agentes IA vinculados ao projeto"
     }
   },
   "required": [

@@ -1,0 +1,61 @@
+{
+  "name": "AIAgentAlert",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "overdue_tasks",
+        "risk_detected",
+        "bottleneck",
+        "deadline_risk",
+        "unassigned_tasks",
+        "blocked_dependencies",
+        "critical_path",
+        "milestone_upcoming"
+      ],
+      "default": "risk_detected"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "suggested_action": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "dismissed",
+        "resolved"
+      ],
+      "default": "active"
+    },
+    "dismissed_by_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "alert_type"
+  ]
+}

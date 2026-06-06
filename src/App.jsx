@@ -33,6 +33,9 @@ import AutomationBuilder from '@/pages/AutomationBuilder';
 import ProjectTemplates from '@/pages/ProjectTemplates';
 import Contracts from '@/pages/Contracts';
 import ClientPortal from '@/pages/ClientPortal';
+import AIAgents from '@/pages/AIAgents';
+import AIAgentForm from '@/pages/AIAgentForm';
+import AIAgentChat from '@/pages/AIAgentChat';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -88,6 +91,11 @@ const AuthenticatedApp = () => {
           <Route path="/automation-builder" element={<AutomationBuilder />} />
           <Route path="/templates" element={<ProjectTemplates />} />
           <Route path="/contracts" element={<Contracts />} />
+          <Route path="/ai-agents" element={<AIAgents />} />
+          <Route path="/ai-agents/new" element={<AIAgentForm />} />
+          <Route path="/ai-agents/:id/edit" element={<AIAgentForm />} />
+          <Route path="/ai-agents/chat" element={<AIAgentChat />} />
+          <Route path="/ai-agents/chat/:id" element={<AIAgentChat />} />
         </Route>
       </Route>
 

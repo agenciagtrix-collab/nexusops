@@ -22,7 +22,8 @@ import {
   Zap,
   LayoutTemplate,
   ScrollText,
-  Keyboard
+  Keyboard,
+  Brain,
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ const navItems = [
   { icon: Workflow, label: 'Processos', path: '/processes' },
   { icon: Zap, label: 'Automações', path: '/automation-builder' },
   { icon: ScrollText, label: 'Contratos', path: '/contracts' },
+  { icon: Brain, label: 'Agentes IA', path: '/ai-agents' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Sliders, label: 'Campos', path: '/custom-fields' },
   { icon: Settings, label: 'Configurações', path: '/settings' },

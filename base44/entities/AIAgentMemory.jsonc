@@ -1,0 +1,40 @@
+{
+  "name": "AIAgentMemory",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "memory_type": {
+      "type": "string",
+      "enum": [
+        "decision",
+        "discussion",
+        "milestone",
+        "risk",
+        "context",
+        "instruction"
+      ],
+      "default": "context"
+    },
+    "content": {
+      "type": "string"
+    },
+    "importance": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    }
+  },
+  "required": [
+    "content",
+    "memory_type"
+  ]
+}

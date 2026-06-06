@@ -1,0 +1,132 @@
+{
+  "name": "AIAgent",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do agente"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do agente"
+    },
+    "speciality": {
+      "type": "string",
+      "description": "Especialidade principal"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "strategy",
+        "legal",
+        "financial",
+        "marketing",
+        "pmo",
+        "sales",
+        "technical",
+        "hr",
+        "operations",
+        "design",
+        "custom"
+      ],
+      "default": "custom"
+    },
+    "avatar_emoji": {
+      "type": "string",
+      "default": "\ud83e\udd16"
+    },
+    "avatar_color": {
+      "type": "string",
+      "default": "#6366f1"
+    },
+    "objective": {
+      "type": "string"
+    },
+    "prompt_base": {
+      "type": "string"
+    },
+    "prompt_behavior": {
+      "type": "string"
+    },
+    "prompt_limitations": {
+      "type": "string"
+    },
+    "prompt_rules": {
+      "type": "string"
+    },
+    "communication_tone": {
+      "type": "string",
+      "enum": [
+        "formal",
+        "friendly",
+        "technical",
+        "direct",
+        "consultative"
+      ],
+      "default": "consultative"
+    },
+    "model": {
+      "type": "string",
+      "enum": [
+        "native",
+        "gemini_flash",
+        "claude_sonnet",
+        "openai_gpt4",
+        "deepseek",
+        "grok"
+      ],
+      "default": "native"
+    },
+    "hierarchy_level": {
+      "type": "string",
+      "enum": [
+        "global",
+        "organization",
+        "project"
+      ],
+      "default": "organization"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "project_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "is_proactive": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_template": {
+      "type": "boolean",
+      "default": false
+    },
+    "conversation_count": {
+      "type": "number",
+      "default": 0
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "name",
+    "speciality"
+  ]
+}
