@@ -16,20 +16,52 @@ export default function BlockInspector({ node, onUpdate, onDelete }) {
   }
 
   const fieldConfigs = {
+    start: ['description'],
     text: ['placeholder', 'required'],
+    question: ['placeholder', 'required'],
     email: ['placeholder', 'required'],
     phone: ['placeholder', 'required'],
     number: ['placeholder', 'required', 'min', 'max'],
     date: ['placeholder', 'required'],
+    file: ['required'],
+    image: ['required'],
+    signature: ['required'],
     single_choice: ['options', 'required'],
     multiple_choice: ['options', 'required'],
+    dropdown: ['options', 'required'],
     nps: ['question', 'required'],
-    condition: ['field', 'operator', 'value'],
+    rating: ['question', 'required'],
+    condition: ['field', 'operator', 'value', 'trueLabel', 'falseLabel'],
     split: ['description'],
+    filter: ['description'],
+    validation: ['rule', 'message'],
+    wait: ['duration'],
+    loop: ['iterations'],
     ai_ask: ['agent', 'prompt'],
+    ai_analyze: ['prompt'],
+    ai_classify: ['categories'],
+    ai_diagnose: ['prompt'],
+    ai_summarize: ['prompt'],
+    ai_report: ['prompt'],
+    ai_decide: ['prompt'],
+    ai_suggest: ['prompt'],
     create_client: ['mapping'],
     create_project: ['mapping'],
+    create_task: ['mapping'],
+    create_process: ['mapping'],
+    create_contract: ['mapping'],
+    create_document: ['mapping'],
+    create_portal: ['mapping'],
+    update_status: ['statusValue'],
+    add_comment: ['comment'],
+    add_tag: ['tag'],
+    trigger_automation: ['automationId'],
     send_email: ['to', 'subject', 'body'],
+    send_whatsapp: ['phone', 'message'],
+    send_sms: ['phone', 'message'],
+    send_notification: ['title', 'message'],
+    show_message: ['message'],
+    show_result: ['message'],
   };
 
   const currentConfig = fieldConfigs[node.type] || [];
@@ -153,6 +185,169 @@ export default function BlockInspector({ node, onUpdate, onDelete }) {
                 value={node.data?.description || ''}
                 onChange={(e) => onUpdate({ data: { ...node.data, description: e.target.value } })}
                 rows={3}
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('field') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Campo</label>
+              <Input
+                value={node.data?.field || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, field: e.target.value } })}
+                placeholder="Nome da variável"
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('operator') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Operador</label>
+              <select
+                value={node.data?.operator || 'equals'}
+                onChange={(e) => onUpdate({ data: { ...node.data, operator: e.target.value } })}
+                className="w-full p-2 border rounded-lg text-sm bg-card"
+              >
+                <option value="equals">Igual a</option>
+                <option value="not_equals">Não igual</option>
+                <option value="contains">Contém</option>
+                <option value="gt">Maior que</option>
+                <option value="lt">Menor que</option>
+                <option value="gte">Maior ou igual</option>
+                <option value="lte">Menor ou igual</option>
+              </select>
+            </div>
+          )}
+
+          {currentConfig.includes('value') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Valor</label>
+              <Input
+                value={node.data?.value || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, value: e.target.value } })}
+                placeholder="Comparar com..."
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('trueLabel') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Rótulo Verdadeiro</label>
+              <Input
+                value={node.data?.trueLabel || 'Sim'}
+                onChange={(e) => onUpdate({ data: { ...node.data, trueLabel: e.target.value } })}
+                placeholder="Sim"
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('falseLabel') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Rótulo Falso</label>
+              <Input
+                value={node.data?.falseLabel || 'Não'}
+                onChange={(e) => onUpdate({ data: { ...node.data, falseLabel: e.target.value } })}
+                placeholder="Não"
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('agent') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Agente IA</label>
+              <Input
+                value={node.data?.agent || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, agent: e.target.value } })}
+                placeholder="Nome do agente"
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('prompt') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Prompt</label>
+              <Textarea
+                value={node.data?.prompt || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, prompt: e.target.value } })}
+                placeholder="Instrução para IA"
+                rows={4}
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('duration') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Duração (segundos)</label>
+              <Input
+                type="number"
+                value={node.data?.duration || 0}
+                onChange={(e) => onUpdate({ data: { ...node.data, duration: parseInt(e.target.value) } })}
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('statusValue') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Novo Status</label>
+              <Input
+                value={node.data?.statusValue || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, statusValue: e.target.value } })}
+                placeholder="Ex: completed"
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('message') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Mensagem</label>
+              <Textarea
+                value={node.data?.message || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, message: e.target.value } })}
+                rows={3}
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('title') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Título</label>
+              <Input
+                value={node.data?.title || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, title: e.target.value } })}
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('to') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Para</label>
+              <Input
+                value={node.data?.to || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, to: e.target.value } })}
+                placeholder="Email ou variável"
+                className="text-sm"
+              />
+            </div>
+          )}
+
+          {currentConfig.includes('phone') && (
+            <div>
+              <label className="text-xs font-medium block mb-2">Telefone</label>
+              <Input
+                value={node.data?.phone || ''}
+                onChange={(e) => onUpdate({ data: { ...node.data, phone: e.target.value } })}
+                placeholder="Número ou variável"
                 className="text-sm"
               />
             </div>
