@@ -45,28 +45,57 @@ export default function FormAICreator() {
   const generateForm = async (prompt) => {
     setLoading(true);
     try {
-      // Aqui você integraria com a IA para gerar o formulário
-      // Por enquanto, vamos navegar para o builder com um exemplo
+      // Usar IA para gerar formulário
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Você é um expert em criar formulários. Baseado no seguinte requisito, gere um JSON com a estrutura de um ${selectedType}:
+
+Requisito: ${prompt}
+
+Retorne um JSON com:
+{
+  "title": "título do formulário",
+  "description": "descrição",
+  "fields": [
+    {
+      "label": "pergunta",
+      "type": "short_text|long_text|email|number|single_choice|multiple_choice|date|nps|rating",
+      "required": true/false,
+      "placeholder": "placeholder opcional",
+      "helpText": "texto de ajuda opcional",
+      "options": [{"label": "opção"}] // se choice type
+    }
+  ],
+  "results": [
+    {
+      "title": "título do resultado",
+      "description": "descrição"
+    }
+  ]
+}
+
+Responda APENAS com o JSON válido, sem explicações.`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            description: { type: 'string' },
+            fields: { type: 'array' },
+            results: { type: 'array' },
+          },
+        },
+      });
+
+      const generatedData = response.data || JSON.parse(response);
       const formData = {
-        title: 'Novo Formulário',
-        description: prompt,
+        title: generatedData.title || 'Novo Formulário',
+        description: generatedData.description || prompt,
         type: selectedType,
         status: 'draft',
-        fields: [
-          {
-            label: 'Pergunta 1',
-            type: 'short_text',
-            required: true,
-          },
-          {
-            label: 'Pergunta 2',
-            type: 'long_text',
-            required: false,
-          },
-        ],
+        icon: selectedType === 'quiz' ? '📊' : selectedType === 'diagnostic' ? '🔍' : '📋',
+        fields: generatedData.fields || [],
+        results: generatedData.results || [],
       };
 
-      // Salvar e navegar
       const created = await base44.entities.Form.create(formData);
       navigate(`/forms/${created.id}/edit`);
     } catch (error) {

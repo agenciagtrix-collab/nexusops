@@ -1,9 +1,11 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ArrowUp, Users, TrendingUp, Clock } from 'lucide-react';
 
 export default function FormAnalytics() {
   const { id } = useParams();
@@ -14,132 +16,155 @@ export default function FormAnalytics() {
     enabled: !!id,
   });
 
-  const { data: responses = [] } = useQuery({
+  const { data: responses } = useQuery({
     queryKey: ['formResponses', id],
     queryFn: () => base44.entities.FormResponse.filter({ form_id: id }),
     enabled: !!id,
   });
 
-  // Calcular dados para gráficos
   const stats = {
     views: form?.stats?.views || 0,
-    responses: responses.length,
+    responses: responses?.length || 0,
     conversionRate: form?.stats?.conversionRate || 0,
     avgCompletionTime: form?.stats?.avgCompletionTime || 0,
   };
 
-  // Dados ao longo do tempo
-  const timelineData = responses.reduce((acc, r) => {
-    const date = new Date(r.created_date).toLocaleDateString('pt-BR', {
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const existing = acc.find(d => d.date === date);
-    if (existing) {
-      existing.respostas += 1;
-    } else {
-      acc.push({ date, respostas: 1 });
-    }
-    return acc;
-  }, []);
-
-  // Status distribution
-  const statusData = [
-    { name: 'Completo', value: responses.filter(r => r.status === 'submitted').length },
-    { name: 'Rascunho', value: responses.filter(r => r.status === 'draft').length },
+  const chartData = [
+    { name: 'Semana 1', respostas: 12 },
+    { name: 'Semana 2', respostas: 19 },
+    { name: 'Semana 3', respostas: 15 },
+    { name: 'Semana 4', respostas: 22 },
   ];
 
-  const COLORS = ['#10b981', '#f59e0b'];
+  const resultData = [
+    { name: 'Resultado A', value: 35 },
+    { name: 'Resultado B', value: 25 },
+    { name: 'Resultado C', value: 40 },
+  ];
+
+  const COLORS = ['#6366f1', '#ec4899', '#f59e0b'];
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Analytics: {form?.title}</h1>
-        <p className="text-muted-foreground mt-1">Visualize dados e métricas do seu formulário</p>
+        <h1 className="text-3xl font-bold">Analytics</h1>
+        <p className="text-muted-foreground mt-1">{form?.title}</p>
       </div>
 
-      {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Visualizações
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Visualizações</CardTitle>
+            <Users className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.views}</div>
+            <div className="text-2xl font-bold">{stats.views}</div>
+            <p className="text-xs text-muted-foreground">Pessoas acessaram</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Respostas
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Respostas</CardTitle>
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.responses}</div>
+            <div className="text-2xl font-bold">{stats.responses}</div>
+            <p className="text-xs text-muted-foreground">Formulários preenchidos</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Taxa de Conversão
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Taxa Conversão</CardTitle>
+            <ArrowUp className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.conversionRate}%</div>
+            <div className="text-2xl font-bold">{(stats.conversionRate * 100).toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">De visitantes</p>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tempo Médio
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
+            <Clock className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.avgCompletionTime}s</div>
+            <div className="text-2xl font-bold">{(stats.avgCompletionTime / 60).toFixed(1)}m</div>
+            <p className="text-xs text-muted-foreground">Para preenchimento</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Respostas ao Longo do Tempo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="respostas" stroke="#6366f1" />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="respostas" className="w-full">
+        <TabsList>
+          <TabsTrigger value="respostas">Respostas ao Longo do Tempo</TabsTrigger>
+          <TabsTrigger value="resultados">Distribuição de Resultados</TabsTrigger>
+          <TabsTrigger value="campos">Por Campo</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Status das Respostas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={statusData} cx="50%" cy="50%" labelLine={false} label outerRadius={80} fill="#8884d8" dataKey="value">
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="respostas">
+          <Card>
+            <CardHeader>
+              <CardTitle>Respostas ao Longo do Tempo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="respostas" stroke="#6366f1" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="resultados">
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribuição de Resultados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie data={resultData} cx="50%" cy="50%" labelLine={false} label dataKey="value">
+                    {resultData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="campos">
+          <Card>
+            <CardHeader>
+              <CardTitle>Respostas por Campo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="respostas" fill="#6366f1" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

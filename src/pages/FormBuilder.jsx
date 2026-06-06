@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import FormFieldEditor from '@/components/forms/FormFieldEditor';
 import FormPreview from '@/components/forms/FormPreview';
+import LogicBuilder from '@/components/forms/LogicBuilder';
+import ResultsBuilder from '@/components/forms/ResultsBuilder';
 
 export default function FormBuilder() {
   const { id } = useParams();
@@ -22,8 +24,11 @@ export default function FormBuilder() {
     type: 'form',
     status: 'draft',
     icon: '📋',
+    color: '#6366f1',
     fields: [],
     theme: { layout: 'single', progressBar: false },
+    logic: [],
+    results: [],
   });
   const [fields, setFields] = useState([]);
 
@@ -36,7 +41,6 @@ export default function FormBuilder() {
   useEffect(() => {
     if (existingForm) {
       setForm(existingForm);
-      // Buscar fields relacionados
       if (existingForm.fields?.length) {
         base44.entities.FormField.filter({ form_id: id }).then(setFields);
       }
@@ -90,7 +94,6 @@ export default function FormBuilder() {
         formId = created.id;
       }
 
-      // Salvar fields
       for (const field of fields) {
         if (field.id?.startsWith('temp')) {
           await base44.entities.FormField.create({
@@ -114,7 +117,7 @@ export default function FormBuilder() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Construtor de Formulários</h1>
-          <p className="text-muted-foreground mt-1">Crie sua pesquisa arrastando e soltando campos</p>
+          <p className="text-muted-foreground mt-1">Crie sua pesquisa com campos, lógica e resultados</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => navigate('/forms')} variant="outline">
@@ -130,6 +133,8 @@ export default function FormBuilder() {
       <Tabs defaultValue="builder" className="w-full">
         <TabsList>
           <TabsTrigger value="builder">Construtor</TabsTrigger>
+          <TabsTrigger value="logic">Lógica</TabsTrigger>
+          <TabsTrigger value="results">Resultados</TabsTrigger>
           <TabsTrigger value="settings">Configurações</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
@@ -142,7 +147,13 @@ export default function FormBuilder() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-3">
-                <div className="text-4xl">{form.icon}</div>
+                <input
+                  type="text"
+                  value={form.icon}
+                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                  maxLength="2"
+                  className="text-4xl w-16 text-center border rounded p-1 bg-card"
+                />
                 <div className="flex-1 space-y-3">
                   <Input
                     placeholder="Título do formulário"
@@ -163,57 +174,56 @@ export default function FormBuilder() {
           {/* Fields Editor */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Perguntas</CardTitle>
+              <CardTitle>Perguntas ({fields.length})</CardTitle>
               <Button onClick={handleAddField} size="sm" className="gap-1">
                 <Plus className="w-4 h-4" />
-                Adicionar Pergunta
+                Adicionar
               </Button>
             </CardHeader>
             <CardContent className="space-y-3">
               {fields.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma pergunta adicionada. Clique em "Adicionar Pergunta" para começar.
+                  Nenhuma pergunta adicionada. Clique em "Adicionar" para começar.
                 </div>
               ) : (
                 fields.map((field, index) => (
                   <div key={field.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Pergunta"
-                          value={field.label}
-                          onChange={(e) => handleUpdateField(index, { label: e.target.value })}
-                          className="font-medium mb-2"
-                        />
-                        <FormFieldEditor field={field} onUpdate={(updates) => handleUpdateField(index, updates)} />
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-muted-foreground">Pergunta {index + 1}</span>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleMoveField(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleMoveField(index, 'down')}
+                          disabled={index === fields.length - 1}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRemoveField(index)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleMoveField(index, 'up')}
-                        disabled={index === 0}
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleMoveField(index, 'down')}
-                        disabled={index === fields.length - 1}
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRemoveField(index)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Input
+                      placeholder="Pergunta"
+                      value={field.label}
+                      onChange={(e) => handleUpdateField(index, { label: e.target.value })}
+                      className="font-medium"
+                    />
+                    <FormFieldEditor field={field} onUpdate={(updates) => handleUpdateField(index, updates)} />
                   </div>
                 ))
               )}
@@ -221,10 +231,41 @@ export default function FormBuilder() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="logic" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lógica Condicional</CardTitle>
+              <p className="text-sm text-muted-foreground">Crie fluxos dinâmicos baseados nas respostas</p>
+            </CardHeader>
+            <CardContent>
+              <LogicBuilder
+                conditions={form.logic}
+                fields={fields}
+                onUpdate={(logic) => setForm({ ...form, logic })}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="results" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Páginas de Resultado</CardTitle>
+              <p className="text-sm text-muted-foreground">Crie páginas personalizadas baseadas nas respostas</p>
+            </CardHeader>
+            <CardContent>
+              <ResultsBuilder
+                results={form.results}
+                onUpdate={(results) => setForm({ ...form, results })}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Configurações do Formulário</CardTitle>
+              <CardTitle>Configurações</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -257,24 +298,36 @@ export default function FormBuilder() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tema</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-muted-foreground">Layout</label>
-                    <select
-                      value={form.theme?.layout}
-                      onChange={(e) => setForm({
-                        ...form,
-                        theme: { ...form.theme, layout: e.target.value },
-                      })}
-                      className="w-full mt-1 p-2 border rounded-lg bg-card text-sm"
-                    >
-                      <option value="single">Uma pergunta por página</option>
-                      <option value="multi">Múltiplas perguntas</option>
-                      <option value="progressive">Progressivo</option>
-                    </select>
-                  </div>
+              <div>
+                <label className="text-sm font-medium">Layout</label>
+                <select
+                  value={form.theme?.layout}
+                  onChange={(e) => setForm({
+                    ...form,
+                    theme: { ...form.theme, layout: e.target.value },
+                  })}
+                  className="w-full mt-2 p-2 border rounded-lg bg-card"
+                >
+                  <option value="single">Uma pergunta por página</option>
+                  <option value="multi">Múltiplas perguntas</option>
+                  <option value="progressive">Progressivo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Cor Primária</label>
+                <div className="flex gap-2 mt-2">
+                  {['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setForm({ ...form, color })}
+                      className="w-8 h-8 rounded border-2"
+                      style={{
+                        backgroundColor: color,
+                        borderColor: form.color === color ? '#000' : '#ccc',
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
             </CardContent>

@@ -1,102 +1,88 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Plus, Copy } from 'lucide-react';
 
-const DEFAULT_TEMPLATES = [
+const TEMPLATES = [
   {
     id: 'briefing',
-    name: 'Briefing',
-    description: 'Coleta de informações estruturadas para projetos',
-    category: 'briefing',
+    name: 'Briefing para Agência',
+    description: 'Formulário de briefing detalhado para captar requisitos',
     icon: '📋',
-    uses: 145,
+    category: 'briefing',
   },
   {
     id: 'nps',
-    name: 'NPS - Net Promoter Score',
-    description: 'Pesquisa de satisfação e lealdade',
+    name: 'Pesquisa NPS',
+    description: 'Meça a satisfação e lealdade de clientes',
+    icon: '📊',
     category: 'nps',
-    icon: '⭐',
-    uses: 389,
   },
   {
     id: 'onboarding',
     name: 'Onboarding',
-    description: 'Coletar dados de novos clientes',
-    category: 'onboarding',
+    description: 'Formulário de integração para novos usuários',
     icon: '👋',
-    uses: 234,
-  },
-  {
-    id: 'lead_capture',
-    name: 'Captação de Leads',
-    description: 'Formulário para captar leads qualificados',
-    category: 'lead_capture',
-    icon: '🎯',
-    uses: 567,
-  },
-  {
-    id: 'satisfaction',
-    name: 'Pesquisa de Satisfação',
-    description: 'Avalie a satisfação do cliente',
-    category: 'survey',
-    icon: '😊',
-    uses: 223,
+    category: 'onboarding',
   },
   {
     id: 'diagnostic',
     name: 'Diagnóstico',
-    description: 'Crie um diagnóstico com lógica condicional',
-    category: 'diagnostic',
+    description: 'Diagnóstico com lógica e resultados personalizados',
     icon: '🔍',
-    uses: 156,
+    category: 'diagnostic',
   },
   {
-    id: 'assessment',
-    name: 'Avaliação de Competências',
-    description: 'Quiz e avaliação de conhecimento',
+    id: 'evaluation',
+    name: 'Avaliação de Performance',
+    description: 'Avalie colaboradores com escala e pontuação',
+    icon: '⭐',
     category: 'assessment',
-    icon: '📊',
-    uses: 178,
+  },
+  {
+    id: 'survey',
+    name: 'Pesquisa Interna',
+    description: 'Pesquisa de clima e cultura organizacional',
+    icon: '📝',
+    category: 'internal_research',
+  },
+  {
+    id: 'lead-capture',
+    name: 'Captação de Leads',
+    description: 'Formulário para captura de contatos qualificados',
+    icon: '📧',
+    category: 'lead_capture',
   },
   {
     id: 'intake',
-    name: 'Formulário de Intake',
-    description: 'Coleta de dados para consultas e atendimentos',
+    name: 'Anamnese',
+    description: 'Formulário de intake para serviços profissionais',
+    icon: '📌',
     category: 'intake',
-    icon: '📝',
-    uses: 267,
   },
 ];
 
 export default function FormTemplates() {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [search, setSearch] = useState('');
 
-  const { data: customTemplates = [] } = useQuery({
+  const { data: templates } = useQuery({
     queryKey: ['formTemplates'],
     queryFn: () => base44.entities.FormTemplate.list(),
+    initialData: [],
   });
 
-  const allTemplates = [...DEFAULT_TEMPLATES, ...customTemplates];
-  const filtered = selectedCategory === 'all'
-    ? allTemplates
-    : allTemplates.filter(t => t.category === selectedCategory);
-
-  const categories = [
-    { id: 'all', name: 'Todos', count: allTemplates.length },
-    { id: 'briefing', name: 'Briefing', count: allTemplates.filter(t => t.category === 'briefing').length },
-    { id: 'survey', name: 'Pesquisas', count: allTemplates.filter(t => t.category === 'survey').length },
-    { id: 'diagnostic', name: 'Diagnósticos', count: allTemplates.filter(t => t.category === 'diagnostic').length },
-    { id: 'assessment', name: 'Avaliações', count: allTemplates.filter(t => t.category === 'assessment').length },
-  ];
+  const filteredTemplates = TEMPLATES.filter((t) =>
+    t.name.toLowerCase().includes(search.toLowerCase()) ||
+    t.description.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleUseTemplate = (template) => {
+    // Navegar para criador com template
     navigate(`/forms/new?template=${template.id}`);
   };
 
@@ -106,48 +92,44 @@ export default function FormTemplates() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Templates de Formulários</h1>
-          <p className="text-muted-foreground mt-1">
-            Use templates pré-feitos para começar rapidamente
-          </p>
+          <p className="text-muted-foreground mt-1">Escolha um template para começar</p>
         </div>
-        <Button onClick={() => navigate('/forms/new')} size="lg" className="gap-2">
-          <Plus className="w-5 h-5" />
+        <Button onClick={() => navigate('/forms/new')} className="gap-2">
+          <Plus className="w-4 h-4" />
           Do Zero
         </Button>
       </div>
 
-      {/* Categories */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {categories.map((cat) => (
-          <Button
-            key={cat.id}
-            variant={selectedCategory === cat.id ? 'default' : 'outline'}
-            onClick={() => setSelectedCategory(cat.id)}
-          >
-            {cat.name}
-            <Badge variant="secondary" className="ml-2">{cat.count}</Badge>
-          </Button>
-        ))}
-      </div>
+      {/* Search */}
+      <Input
+        placeholder="Buscar templates..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="max-w-sm"
+      />
 
       {/* Templates Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((template) => (
-          <Card key={template.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredTemplates.map((template) => (
+          <Card key={template.id} className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start justify-between">
                 <div className="text-4xl">{template.icon}</div>
-                <Badge variant="secondary">{template.category}</Badge>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleUseTemplate(template)}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
               </div>
-              <CardTitle className="mt-2">{template.name}</CardTitle>
-              <CardDescription>{template.description}</CardDescription>
+              <CardTitle className="text-base mt-3">{template.name}</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-end space-y-3">
-              <div className="text-xs text-muted-foreground">
-                {template.uses} pessoas utilizaram
-              </div>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">{template.description}</p>
               <Button
                 onClick={() => handleUseTemplate(template)}
+                variant="outline"
                 className="w-full"
               >
                 Usar Template
@@ -157,12 +139,10 @@ export default function FormTemplates() {
         ))}
       </div>
 
-      {filtered.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground">Nenhum template encontrado</p>
-          </CardContent>
-        </Card>
+      {filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Nenhum template encontrado</p>
+        </div>
       )}
     </div>
   );
