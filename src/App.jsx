@@ -48,6 +48,7 @@ import Flows from '@/pages/Flows';
 import FlowTemplates from '@/pages/FlowTemplates';
 import FlowPublic from '@/pages/FlowPublic';
 import FlowResponses from '@/pages/FlowResponses';
+import FlowAnalytics from '@/pages/FlowAnalytics';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -120,6 +121,7 @@ const AuthenticatedApp = () => {
           <Route path="/flows/new" element={<FlowBuilder />} />
           <Route path="/flows/:id/edit" element={<FlowBuilder />} />
           <Route path="/flows/:flowId/responses" element={<FlowResponses />} />
+          <Route path="/flows/:flowId/analytics" element={<FlowAnalytics />} />
         </Route>
       </Route>
 

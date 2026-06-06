@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Copy, QrCode, Code } from 'lucide-react';
 import { toast } from 'sonner';
+import FlowIntegrationPanel from './FlowIntegrationPanel';
 
 export default function FlowPublishDialog({ open, onOpenChange, flow, onSuccess }) {
   const queryClient = useQueryClient();
@@ -67,8 +68,9 @@ export default function FlowPublishDialog({ open, onOpenChange, flow, onSuccess 
         </DialogHeader>
 
         <Tabs defaultValue="config" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="config">Configuração</TabsTrigger>
+            <TabsTrigger value="integration" disabled={!publicLink}>Integrações</TabsTrigger>
             <TabsTrigger value="share" disabled={!publicLink}>Compartilhar</TabsTrigger>
             <TabsTrigger value="embed" disabled={!publicLink}>Incorporar</TabsTrigger>
           </TabsList>
@@ -111,6 +113,18 @@ export default function FlowPublishDialog({ open, onOpenChange, flow, onSuccess 
               </Button>
             </div>
           </TabsContent>
+
+          {/* Integration Tab */}
+          {publicLink && (
+            <TabsContent value="integration" className="space-y-4">
+              <FlowIntegrationPanel
+                publish={{ integrations: {} }}
+                onUpdate={(data) => {
+                  toast.success('Integrações configuradas');
+                }}
+              />
+            </TabsContent>
+          )}
 
           {/* Share Tab */}
           {publicLink && (

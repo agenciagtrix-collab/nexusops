@@ -16,6 +16,11 @@ export default function FlowPublic() {
   const [responses, setResponses] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [respondentData, setRespondentData] = useState({
+    name: localStorage.getItem('flow_respondent_name') || '',
+    email: localStorage.getItem('flow_respondent_email') || '',
+    phone: localStorage.getItem('flow_respondent_phone') || '',
+  });
 
   const { data: publish } = useQuery({
     queryKey: ['flow-publish', id],
@@ -70,14 +75,23 @@ export default function FlowPublic() {
     if (currentNodeIndex < nodes.length - 1) {
       setCurrentNodeIndex(currentNodeIndex + 1);
     } else {
-      // Submeter respostas
+      // Submeter respostas com dados do respondente
       createResponse.mutate({
         flow_id: flowData.id,
         flow_publish_id: publish[0].id,
+        respondent_name: respondentData.name,
+        respondent_email: respondentData.email,
+        respondent_phone: respondentData.phone,
         responses,
         status: 'completed',
         completion_time: 0,
       });
+      // Limpar localStorage
+      localStorage.removeItem(`flow_${id}_responses`);
+      localStorage.removeItem(`flow_${id}_index`);
+      localStorage.removeItem('flow_respondent_name');
+      localStorage.removeItem('flow_respondent_email');
+      localStorage.removeItem('flow_respondent_phone');
     }
   };
 
@@ -88,10 +102,20 @@ export default function FlowPublic() {
   };
 
   const handleResponseChange = (nodeId, value) => {
-    setResponses({
+    const newResponses = {
       ...responses,
       [nodeId]: value,
-    });
+    };
+    setResponses(newResponses);
+    // Auto-save progress
+    localStorage.setItem(`flow_${id}_responses`, JSON.stringify(newResponses));
+    localStorage.setItem(`flow_${id}_index`, currentNodeIndex.toString());
+  };
+
+  const handleRespondentChange = (field, value) => {
+    const newData = { ...respondentData, [field]: value };
+    setRespondentData(newData);
+    localStorage.setItem(`flow_respondent_${field}`, value);
   };
 
   const isLastNode = currentNodeIndex === nodes.length - 1;
@@ -106,6 +130,31 @@ export default function FlowPublic() {
             <p className="text-muted-foreground">{flowData.description}</p>
           )}
         </div>
+
+        {/* Respondent Data - First Step */}
+        {currentNodeIndex === 0 && !respondentData.name && (
+          <Card className="p-6 mb-8 border-primary/20 bg-primary/5">
+            <h3 className="font-semibold mb-4">Informações do Respondente</h3>
+            <div className="space-y-3">
+              <Input
+                placeholder="Seu nome"
+                value={respondentData.name}
+                onChange={(e) => handleRespondentChange('name', e.target.value)}
+              />
+              <Input
+                placeholder="Seu e-mail"
+                type="email"
+                value={respondentData.email}
+                onChange={(e) => handleRespondentChange('email', e.target.value)}
+              />
+              <Input
+                placeholder="Seu telefone (opcional)"
+                value={respondentData.phone}
+                onChange={(e) => handleRespondentChange('phone', e.target.value)}
+              />
+            </div>
+          </Card>
+        )}
 
         {/* Progress */}
         <div className="mb-8">

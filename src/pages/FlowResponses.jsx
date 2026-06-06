@@ -71,11 +71,21 @@ export default function FlowResponses() {
         onMenuToggle={onMenuToggle}
         title="Respostas"
         actions={
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Download className="w-4 h-4" /> Exportar
+          <div className="flex gap-2">
+          <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => navigate(`/flows/${flowId}/analytics`)}
+          >
+          📊 Analytics
           </Button>
-        }
-      />
+          <Button variant="outline" size="sm" className="gap-1.5">
+          <Download className="w-4 h-4" /> Exportar
+          </Button>
+          </div>
+          }
+          />
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
