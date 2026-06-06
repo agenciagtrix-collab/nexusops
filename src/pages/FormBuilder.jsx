@@ -139,7 +139,7 @@ export default function FormBuilder() {
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="builder" className="space-y-4">
+        <TabsContent value="builder" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
           {/* Basic Info */}
           <Card>
             <CardHeader>
@@ -231,7 +231,7 @@ export default function FormBuilder() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="logic" className="space-y-4">
+        <TabsContent value="logic" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
           <Card>
             <CardHeader>
               <CardTitle>Lógica Condicional</CardTitle>
@@ -247,7 +247,7 @@ export default function FormBuilder() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="results" className="space-y-4">
+        <TabsContent value="results" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
           <Card>
             <CardHeader>
               <CardTitle>Páginas de Resultado</CardTitle>
@@ -262,7 +262,7 @@ export default function FormBuilder() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-4">
+        <TabsContent value="settings" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
           <Card>
             <CardHeader>
               <CardTitle>Configurações</CardTitle>
@@ -334,7 +334,7 @@ export default function FormBuilder() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="preview">
+        <TabsContent value="preview" className="max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
           <FormPreview form={form} fields={fields} />
         </TabsContent>
       </Tabs>
