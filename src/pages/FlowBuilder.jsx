@@ -5,10 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Save, Play, Share2, Settings, Plus, Wand2, FileText, Trash2,
+  Save, Play, Share2, Settings, Plus, Wand2, FileText,
 } from 'lucide-react';
-import FlowCanvas from '@/components/flows/FlowCanvas';
-import BlockPalette from '@/components/flows/BlockPalette';
+import ImprovedFlowCanvas from '@/components/flows/ImprovedFlowCanvas';
+import BlockPaletteV2 from '@/components/flows/BlockPaletteV2';
+import BlockInspector from '@/components/flows/BlockInspector';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -130,58 +131,56 @@ export default function FlowBuilder() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Palette */}
+      {/* Left Sidebar - Block Palette */}
       <div className="w-64 flex flex-col border-r border-border">
-        <BlockPalette onBlockAdd={handleAddBlock} />
+        <BlockPaletteV2 />
       </div>
 
       {/* Main Canvas */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 p-4 border-b border-border bg-card">
-          <div className="flex-1">
+        <div className="flex items-center justify-between gap-3 px-6 py-3 border-b border-border bg-card shadow-sm">
+          <div className="flex-1 max-w-md">
             <Input
               value={flow.name}
               onChange={(e) => setFlow(prev => ({ ...prev, name: e.target.value }))}
-              className="font-semibold text-lg"
+              className="font-semibold text-base"
               placeholder="Nome do Fluxo"
             />
           </div>
 
-          <Button
-            onClick={() => setShowAIGenerator(true)}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <Wand2 className="w-4 h-4" />
-            Gerar com IA
-          </Button>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{flow.nodes?.length || 0} blocos</span>
+          </div>
 
-          <Button
-            onClick={() => setShowSettings(true)}
-            variant="outline"
-            size="sm"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowAIGenerator(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Wand2 className="w-4 h-4" />
+              Gerar IA
+            </Button>
 
-          <Button
-            onClick={handleSave}
-            size="sm"
-            className="gap-2"
-          >
-            <Save className="w-4 h-4" />
-            Salvar
-          </Button>
+            <Button
+              onClick={handleSave}
+              size="sm"
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
+              <Save className="w-4 h-4" />
+              Salvar
+            </Button>
 
-          <Button
-            onClick={() => navigate('/flows')}
-            variant="outline"
-            size="sm"
-          >
-            Voltar
-          </Button>
+            <Button
+              onClick={() => navigate('/flows')}
+              variant="outline"
+              size="sm"
+            >
+              ← Voltar
+            </Button>
+          </div>
         </div>
 
         {/* Canvas Area */}
@@ -190,113 +189,31 @@ export default function FlowBuilder() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleAddBlock}
         >
-          <FlowCanvas
+          <ImprovedFlowCanvas
             nodes={flow.nodes}
             edges={flow.edges}
+            selectedNodeId={selectedNodeId}
             onNodeSelect={setSelectedNodeId}
             onNodeDrag={handleNodeDrag}
           />
         </div>
       </div>
 
-      {/* Node Inspector */}
-      {selectedNode && (
-        <div className="w-72 border-l border-border bg-card overflow-y-auto">
-          <div className="p-4 border-b border-border space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold">{selectedNode.label}</h3>
-                <p className="text-xs text-muted-foreground">{selectedNode.type}</p>
-              </div>
-              <Button
-                onClick={handleDeleteNode}
-                variant="ghost"
-                size="sm"
-                className="text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <Input
-              placeholder="Rótulo do bloco"
-              value={selectedNode.label}
-              onChange={(e) =>
-                setFlow(prev => ({
-                  ...prev,
-                  nodes: prev.nodes.map(n =>
-                    n.id === selectedNodeId ? { ...n, label: e.target.value } : n
-                  ),
-                }))
-              }
-            />
-          </div>
-
-          <div className="p-4 space-y-4">
-            {/* Type-specific config */}
-            {['email', 'phone', 'text', 'textarea'].includes(selectedNode.type) && (
-              <div>
-                <label className="text-xs font-medium">Placeholder</label>
-                <Input
-                  placeholder="Dica para o usuário"
-                  value={selectedNode.data?.placeholder || ''}
-                  onChange={(e) =>
-                    setFlow(prev => ({
-                      ...prev,
-                      nodes: prev.nodes.map(n =>
-                        n.id === selectedNodeId
-                          ? { ...n, data: { ...n.data, placeholder: e.target.value } }
-                          : n
-                      ),
-                    }))
-                  }
-                  className="mt-1 text-sm"
-                />
-              </div>
-            )}
-
-            {['single_choice', 'multiple_choice', 'dropdown'].includes(selectedNode.type) && (
-              <div>
-                <label className="text-xs font-medium">Opções (uma por linha)</label>
-                <textarea
-                  value={selectedNode.data?.options?.join('\n') || ''}
-                  onChange={(e) =>
-                    setFlow(prev => ({
-                      ...prev,
-                      nodes: prev.nodes.map(n =>
-                        n.id === selectedNodeId
-                          ? { ...n, data: { ...n.data, options: e.target.value.split('\n') } }
-                          : n
-                      ),
-                    }))
-                  }
-                  rows={3}
-                  className="w-full p-2 text-sm border rounded-lg"
-                  placeholder="Opção 1&#10;Opção 2&#10;Opção 3"
-                />
-              </div>
-            )}
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={selectedNode.data?.required || false}
-                onChange={(e) =>
-                  setFlow(prev => ({
-                    ...prev,
-                    nodes: prev.nodes.map(n =>
-                      n.id === selectedNodeId
-                        ? { ...n, data: { ...n.data, required: e.target.checked } }
-                        : n
-                    ),
-                  }))
-                }
-              />
-              Campo Obrigatório
-            </label>
-          </div>
-        </div>
-      )}
+      {/* Right Sidebar - Inspector */}
+      <div className="w-72 flex flex-col border-l border-border">
+        <BlockInspector
+          node={selectedNode}
+          onUpdate={(updates) => {
+            setFlow(prev => ({
+              ...prev,
+              nodes: prev.nodes.map(n =>
+                n.id === selectedNodeId ? { ...n, ...updates } : n
+              ),
+            }));
+          }}
+          onDelete={handleDeleteNode}
+        />
+      </div>
 
       {/* AI Generator Dialog */}
       {showAIGenerator && (
