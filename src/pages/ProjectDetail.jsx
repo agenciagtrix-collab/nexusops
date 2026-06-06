@@ -22,7 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft, Plus, Settings, LayoutGrid, List, CalendarDays,
-  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X, Globe, Brain
+  GitBranch, Table2, Users, FileText, Activity, Eye, BarChart2, GanttChart, Building2, Search, X, Globe, Brain, Play
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -154,6 +154,18 @@ export default function ProjectDetail() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', id] }),
   });
 
+  const updateProject = useMutation({
+    mutationFn: (data) => base44.entities.Project.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project', id] });
+      toast.success('Projeto iniciado!');
+    },
+  });
+
+  const handleStartProject = () => {
+    updateProject.mutate({ ...project, status: 'in_progress' });
+  };
+
   const handleBulkUpdate = (taskId, data) => {
     updateTask.mutate({ taskId, data });
   };
@@ -241,6 +253,11 @@ export default function ProjectDetail() {
                   <div className="text-sm font-semibold text-right mb-1">{progress}%</div>
                   <Progress value={progress} className="h-2" />
                 </div>
+                {project.status === 'not_started' && (
+                  <Button size="sm" onClick={handleStartProject} disabled={updateProject.isPending} className="gap-1.5 whitespace-nowrap">
+                    <Play className="w-4 h-4" /> Iniciar Projeto
+                  </Button>
+                )}
               </div>
             </div>
           </Card>
