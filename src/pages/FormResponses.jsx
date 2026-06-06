@@ -2,26 +2,26 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Download, Trash2, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Download, Search, Eye } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function FormResponses() {
   const { id } = useParams();
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [search, setSearch] = useState('');
+  const [selectedResponse, setSelectedResponse] = useState(null);
 
   const { data: form } = useQuery({
     queryKey: ['form', id],
     queryFn: () => base44.entities.Form.get(id),
-    enabled: !!id,
   });
 
-  const { data: responses = [] } = useQuery({
+  const { data: responses = [], isLoading } = useQuery({
     queryKey: ['formResponses', id],
     queryFn: () => base44.entities.FormResponse.filter({ form_id: id }, '-created_date'),
-    enabled: !!id,
   });
 
   const { data: fields = [] } = useQuery({
@@ -30,142 +30,138 @@ export default function FormResponses() {
     enabled: !!id,
   });
 
-  const filteredResponses = responses.filter(r => {
-    if (filterStatus === 'all') return true;
-    return r.status === filterStatus;
-  });
+  const filteredResponses = responses.filter(r =>
+    r.respondent_email?.toLowerCase().includes(search.toLowerCase()) ||
+    r.respondent_name?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const stats = {
-    total: responses.length,
-    completed: responses.filter(r => r.status === 'submitted').length,
-    avgTime: responses.length > 0
-      ? Math.round(responses.reduce((sum, r) => sum + (r.completionTime || 0), 0) / responses.length)
-      : 0,
+  const handleExportCSV = () => {
+    const headers = ['Data', 'Email', 'Nome', ...fields.map(f => f.label), 'Pontuação', 'Status'];
+    const rows = responses.map(r => [
+      new Date(r.created_date).toLocaleDateString('pt-BR'),
+      r.respondent_email || '',
+      r.respondent_name || '',
+      ...fields.map(f => {
+        const value = r.responses?.[f.id];
+        return Array.isArray(value) ? value.join('; ') : value || '';
+      }),
+      r.score || '',
+      r.status,
+    ]);
+
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `respostas-${form?.title || 'formulario'}.csv`;
+    a.click();
   };
 
-  const handleDeleteResponse = async (id) => {
-    if (confirm('Deletar esta resposta?')) {
-      await base44.entities.FormResponse.delete(id);
-    }
-  };
+  if (isLoading) return <div className="p-6">Carregando...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Respostas: {form?.title}</h1>
-          <p className="text-muted-foreground mt-1">
-            Visualize e gerencie todas as respostas do formulário
-          </p>
+          <h1 className="text-3xl font-bold">Respostas</h1>
+          <p className="text-muted-foreground mt-1">{form?.title}</p>
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button onClick={handleExportCSV} variant="outline" className="gap-2">
           <Download className="w-4 h-4" />
-          Exportar
+          Exportar CSV
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total de Respostas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.completed} completadas
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Taxa de Conversão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {stats.total === 0 ? '0' : Math.round((stats.completed / stats.total) * 100)}%
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tempo Médio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.avgTime}s</div>
-          </CardContent>
-        </Card>
+      <div className="flex gap-3">
+        <Input
+          placeholder="Buscar por email ou nome..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Badge variant="secondary">{filteredResponses.length} respostas</Badge>
       </div>
 
-      {/* Responses Table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Respostas</CardTitle>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="w-4 h-4" />
-            Filtros
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {filteredResponses.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhuma resposta ainda
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b">
-                  <tr className="text-muted-foreground font-medium">
-                    <th className="text-left py-2 px-2">Email</th>
-                    <th className="text-left py-2 px-2">Data</th>
-                    <th className="text-left py-2 px-2">Tempo</th>
-                    <th className="text-left py-2 px-2">Status</th>
-                    <th className="text-left py-2 px-2">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredResponses.map((response) => (
-                    <tr key={response.id} className="border-b hover:bg-muted/50">
-                      <td className="py-3 px-2">{response.respondent_email || 'Anônimo'}</td>
-                      <td className="py-3 px-2">
-                        {new Date(response.created_date).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="py-3 px-2">{response.completionTime || 0}s</td>
-                      <td className="py-3 px-2">
-                        <Badge variant={response.status === 'submitted' ? 'default' : 'secondary'}>
-                          {response.status === 'submitted' ? 'Completo' : 'Rascunho'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="ghost">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => handleDeleteResponse(response.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+      {filteredResponses.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            Nenhuma resposta ainda
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Nome</TableHead>
+                {fields.slice(0, 3).map(f => (
+                  <TableHead key={f.id} className="max-w-xs">{f.label}</TableHead>
+                ))}
+                <TableHead>Pontuação</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredResponses.map(response => (
+                <TableRow key={response.id}>
+                  <TableCell className="text-sm">
+                    {new Date(response.created_date).toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell className="text-sm">{response.respondent_email}</TableCell>
+                  <TableCell className="text-sm">{response.respondent_name}</TableCell>
+                  {fields.slice(0, 3).map(f => (
+                    <TableCell key={f.id} className="text-sm max-w-xs truncate">
+                      {Array.isArray(response.responses?.[f.id])
+                        ? response.responses[f.id].join(', ')
+                        : String(response.responses?.[f.id] || '')}
+                    </TableCell>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <TableCell className="text-sm font-medium">{response.score || '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant={response.status === 'submitted' ? 'default' : 'secondary'}>
+                      {response.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedResponse(response)}
+                      className="gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      {selectedResponse && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalhes da Resposta</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fields.map(field => (
+              <div key={field.id} className="border-b pb-4 last:border-b-0">
+                <p className="font-medium text-sm text-muted-foreground">{field.label}</p>
+                <p className="mt-1">
+                  {Array.isArray(selectedResponse.responses?.[field.id])
+                    ? selectedResponse.responses[field.id].join(', ')
+                    : String(selectedResponse.responses?.[field.id] || '-')}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

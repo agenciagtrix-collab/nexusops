@@ -42,6 +42,7 @@ import FormResponses from '@/pages/FormResponses';
 import FormAnalytics from '@/pages/FormAnalytics';
 import FormTemplates from '@/pages/FormTemplates';
 import FormAICreator from '@/pages/FormAICreator';
+import FormShare from '@/pages/FormShare';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -114,6 +115,7 @@ const AuthenticatedApp = () => {
 
       {/* Public route — no auth required */}
       <Route path="/share/:token" element={<ClientPortal />} />
+      <Route path="/form/:id" element={<FormShare />} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

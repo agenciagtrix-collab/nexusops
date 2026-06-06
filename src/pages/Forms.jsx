@@ -12,11 +12,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import ShareFormDialog from '@/components/forms/ShareFormDialog';
 
 export default function Forms() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [shareForm, setShareForm] = useState(null);
 
   const { data: forms = [], isLoading } = useQuery({
     queryKey: ['forms'],
@@ -204,7 +207,7 @@ export default function Forms() {
                           <Copy className="w-4 h-4 mr-2" />
                           Duplicar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {}}>
+                        <DropdownMenuItem onClick={() => setShareForm(form)}>
                           <Share2 className="w-4 h-4 mr-2" />
                           Compartilhar
                         </DropdownMenuItem>
@@ -223,6 +226,17 @@ export default function Forms() {
             </Card>
           ))}
         </div>
+      )}
+
+      {shareForm && (
+        <Dialog open={!!shareForm} onOpenChange={(open) => !open && setShareForm(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Compartilhar Formulário: {shareForm.title}</DialogTitle>
+            </DialogHeader>
+            <ShareFormDialog form={shareForm} onClose={() => setShareForm(null)} />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
