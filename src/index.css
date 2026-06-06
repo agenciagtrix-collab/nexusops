@@ -6,115 +6,228 @@
 
 @layer base {
   :root {
-    --background: 250 30% 98%;
-    --foreground: 260 30% 10%;
+    /* Core palette — Indigo/Purple #6366f1 */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 8%;
+
     --card: 0 0% 100%;
-    --card-foreground: 260 30% 10%;
+    --card-foreground: 240 10% 8%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 260 30% 10%;
-    --primary: 262 83% 58%;
+    --popover-foreground: 240 10% 8%;
+
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 260 20% 94%;
-    --secondary-foreground: 260 30% 25%;
-    --muted: 260 15% 94%;
-    --muted-foreground: 260 15% 45%;
-    --accent: 262 50% 92%;
-    --accent-foreground: 262 83% 35%;
-    --destructive: 0 84% 60%;
+
+    --secondary: 240 5% 93%;
+    --secondary-foreground: 240 10% 20%;
+
+    --muted: 240 5% 93%;
+    --muted-foreground: 240 5% 42%;
+
+    --accent: 239 60% 95%;
+    --accent-foreground: 239 84% 40%;
+
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 260 20% 88%;
-    --input: 260 20% 88%;
-    --ring: 262 83% 58%;
-    --chart-1: 262 83% 58%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 30 95% 52%;
-    --chart-4: 280 67% 60%;
+
+    --border: 240 6% 86%;
+    --input: 240 6% 86%;
+    --ring: 239 84% 67%;
+
+    --chart-1: 239 84% 67%;
+    --chart-2: 160 60% 40%;
+    --chart-3: 30 90% 52%;
+    --chart-4: 280 65% 58%;
     --chart-5: 340 75% 55%;
-    --radius: 0.625rem;
+
+    --radius: 0.5rem;
+
     --font-heading: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --sidebar-background: 262 40% 12%;
-    --sidebar-foreground: 260 20% 95%;
-    --sidebar-primary: 262 83% 68%;
+
+    /* Sidebar — dark always */
+    --sidebar-background: 240 10% 8%;
+    --sidebar-foreground: 240 5% 90%;
+    --sidebar-primary: 239 84% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 262 35% 20%;
-    --sidebar-accent-foreground: 260 20% 95%;
-    --sidebar-border: 262 30% 18%;
-    --sidebar-ring: 262 83% 68%;
-    --success: 160 84% 39%;
+    --sidebar-accent: 240 8% 14%;
+    --sidebar-accent-foreground: 240 5% 90%;
+    --sidebar-border: 240 8% 14%;
+    --sidebar-ring: 239 84% 67%;
+
+    --success: 142 72% 38%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 38 92% 48%;
     --warning-foreground: 0 0% 100%;
+
+    /* Input surface explicit */
+    --input-background: 0 0% 100%;
   }
 
   .dark {
-    --background: 262 30% 8%;
-    --foreground: 260 20% 95%;
-    --card: 262 25% 11%;
-    --card-foreground: 260 20% 95%;
-    --popover: 262 25% 11%;
-    --popover-foreground: 260 20% 95%;
-    --primary: 262 83% 65%;
+    --background: 240 10% 6%;
+    --foreground: 240 5% 95%;
+
+    --card: 240 10% 9%;
+    --card-foreground: 240 5% 95%;
+
+    --popover: 240 10% 10%;
+    --popover-foreground: 240 5% 95%;
+
+    --primary: 239 84% 67%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 262 20% 18%;
-    --secondary-foreground: 260 20% 90%;
-    --muted: 262 20% 18%;
-    --muted-foreground: 260 15% 65%;
-    --accent: 262 25% 22%;
-    --accent-foreground: 260 20% 95%;
-    --destructive: 0 62% 45%;
+
+    --secondary: 240 8% 16%;
+    --secondary-foreground: 240 5% 90%;
+
+    --muted: 240 8% 16%;
+    --muted-foreground: 240 5% 62%;
+
+    --accent: 239 40% 20%;
+    --accent-foreground: 239 84% 80%;
+
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 262 20% 22%;
-    --input: 262 20% 20%;
-    --ring: 262 83% 65%;
-    --chart-1: 262 83% 65%;
-    --chart-2: 160 84% 45%;
-    --chart-3: 30 95% 55%;
-    --chart-4: 280 67% 65%;
-    --chart-5: 340 75% 60%;
-    --sidebar-background: 262 35% 7%;
-    --sidebar-foreground: 260 20% 95%;
-    --sidebar-primary: 262 83% 68%;
+
+    --border: 240 8% 20%;
+    --input: 240 8% 18%;
+    --ring: 239 84% 67%;
+
+    --chart-1: 239 84% 67%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 90% 55%;
+    --chart-4: 280 65% 62%;
+    --chart-5: 340 75% 58%;
+
+    --sidebar-background: 240 10% 4%;
+    --sidebar-foreground: 240 5% 90%;
+    --sidebar-primary: 239 84% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 262 30% 15%;
-    --sidebar-accent-foreground: 260 20% 95%;
-    --sidebar-border: 262 25% 14%;
-    --sidebar-ring: 262 83% 68%;
-    --success: 160 84% 45%;
+    --sidebar-accent: 240 8% 10%;
+    --sidebar-accent-foreground: 240 5% 90%;
+    --sidebar-border: 240 8% 12%;
+    --sidebar-ring: 239 84% 67%;
+
+    --success: 142 72% 42%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+
+    --input-background: 240 10% 9%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
 
-  /* Ensure inputs are always readable */
-  input, textarea, select {
-    @apply text-foreground;
+  /* ── Global Input / Textarea / Select baseline ── */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]),
+  textarea,
+  select {
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15) !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+    opacity: 1;
   }
 }
 
-/* Custom scrollbar */
+@layer components {
+  /* ── Card ── */
+  .card-elevated {
+    @apply bg-card border border-border rounded-xl shadow-sm;
+  }
+
+  /* ── Button global fixes ── */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80 focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-50 disabled:pointer-events-none transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground border border-border hover:bg-secondary/70 active:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50 disabled:pointer-events-none transition-colors;
+  }
+
+  .btn-ghost {
+    @apply text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent/70 focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50 disabled:pointer-events-none transition-colors;
+  }
+
+  .btn-danger {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80 focus-visible:ring-2 focus-visible:ring-destructive/40 disabled:opacity-50 disabled:pointer-events-none transition-colors;
+  }
+
+  /* ── Form field ── */
+  .form-field {
+    @apply w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm transition-colors focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* ── Modal / Dialog surface ── */
+  .modal-surface {
+    @apply bg-card border border-border shadow-2xl rounded-xl;
+  }
+
+  /* ── Badge variants ── */
+  .badge-primary {
+    @apply bg-primary/10 text-primary border border-primary/20 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+
+  .badge-success {
+    @apply bg-success/10 text-success border border-success/20 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+
+  .badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+
+  .badge-destructive {
+    @apply bg-destructive/10 text-destructive border border-destructive/20 text-xs font-medium px-2 py-0.5 rounded-full;
+  }
+}
+
+/* ── Custom Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 3px;
+  background: hsl(var(--border));
+  border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* ── Focus ring global ── */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary) / 0.6);
+  outline-offset: 2px;
+}
+
+/* ── Selection ── */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
 }
