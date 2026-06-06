@@ -1,0 +1,127 @@
+{
+  "name": "FlowResponse",
+  "type": "object",
+  "properties": {
+    "flow_id": {
+      "type": "string",
+      "description": "ID do fluxo"
+    },
+    "flow_publish_id": {
+      "type": "string",
+      "description": "ID da publica\u00e7\u00e3o"
+    },
+    "respondent_name": {
+      "type": "string",
+      "description": "Nome do respondente"
+    },
+    "respondent_email": {
+      "type": "string",
+      "description": "E-mail do respondente"
+    },
+    "respondent_phone": {
+      "type": "string",
+      "description": "Telefone do respondente"
+    },
+    "responses": {
+      "type": "object",
+      "description": "Respostas por node_id"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_progress",
+        "completed"
+      ],
+      "default": "draft"
+    },
+    "completion_time": {
+      "type": "number",
+      "description": "Tempo em segundos"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ip_address": {
+      "type": "string"
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "device_type": {
+      "type": "string",
+      "enum": [
+        "mobile",
+        "tablet",
+        "desktop"
+      ]
+    },
+    "result_id": {
+      "type": "string",
+      "description": "ID do resultado final"
+    },
+    "result_title": {
+      "type": "string"
+    },
+    "score": {
+      "type": "number"
+    },
+    "path_taken": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos nodes percorridos"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "direct",
+        "link",
+        "qr",
+        "embed"
+      ],
+      "default": "direct"
+    },
+    "project_created_id": {
+      "type": "string",
+      "description": "Projeto criado pela resposta"
+    },
+    "client_created_id": {
+      "type": "string",
+      "description": "Cliente criado pela resposta"
+    },
+    "tasks_created": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de tarefas criadas"
+    },
+    "automations_triggered": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "agents_triggered": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "flow_id",
+    "responses"
+  ]
+}

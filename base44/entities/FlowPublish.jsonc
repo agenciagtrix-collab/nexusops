@@ -1,0 +1,108 @@
+{
+  "name": "FlowPublish",
+  "type": "object",
+  "properties": {
+    "flow_id": {
+      "type": "string",
+      "description": "ID do fluxo publicado"
+    },
+    "slug": {
+      "type": "string",
+      "description": "Slug personalizado da URL"
+    },
+    "link_token": {
+      "type": "string",
+      "description": "Token para link p\u00fablico"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o fluxo est\u00e1 p\u00fablico"
+    },
+    "is_password_protected": {
+      "type": "boolean",
+      "default": false
+    },
+    "password": {
+      "type": "string",
+      "description": "Senha de acesso (se protegido)"
+    },
+    "allowed_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "E-mails permitidos para responder"
+    },
+    "allowed_clients": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de clientes permitidos"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de expira\u00e7\u00e3o"
+    },
+    "max_responses": {
+      "type": "number",
+      "description": "N\u00famero m\u00e1ximo de respostas"
+    },
+    "response_count": {
+      "type": "number",
+      "default": 0
+    },
+    "completion_count": {
+      "type": "number",
+      "default": 0
+    },
+    "view_count": {
+      "type": "number",
+      "default": 0
+    },
+    "qr_code": {
+      "type": "string",
+      "description": "URL do QR Code"
+    },
+    "embed_code": {
+      "type": "string",
+      "description": "C\u00f3digo HTML de incorpora\u00e7\u00e3o"
+    },
+    "linked_projects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de projetos vinculados"
+    },
+    "linked_clients": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs de clientes vinculados"
+    },
+    "notification_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "E-mails para notifica\u00e7\u00e3o de respostas"
+    },
+    "trigger_automation": {
+      "type": "string",
+      "description": "ID de automa\u00e7\u00e3o a disparar"
+    },
+    "trigger_agent": {
+      "type": "string",
+      "description": "ID de agente IA a disparar"
+    }
+  },
+  "required": [
+    "flow_id",
+    "slug",
+    "link_token"
+  ]
+}

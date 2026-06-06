@@ -46,6 +46,8 @@ import FormShare from '@/pages/FormShare';
 import FlowBuilder from '@/pages/FlowBuilder';
 import Flows from '@/pages/Flows';
 import FlowTemplates from '@/pages/FlowTemplates';
+import FlowPublic from '@/pages/FlowPublic';
+import FlowResponses from '@/pages/FlowResponses';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -117,12 +119,14 @@ const AuthenticatedApp = () => {
           <Route path="/flows/templates" element={<FlowTemplates />} />
           <Route path="/flows/new" element={<FlowBuilder />} />
           <Route path="/flows/:id/edit" element={<FlowBuilder />} />
+          <Route path="/flows/:flowId/responses" element={<FlowResponses />} />
         </Route>
       </Route>
 
       {/* Public route — no auth required */}
       <Route path="/share/:token" element={<ClientPortal />} />
       <Route path="/form/:id" element={<FormShare />} />
+      <Route path="/flow/:id" element={<FlowPublic />} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

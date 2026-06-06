@@ -1,0 +1,108 @@
+{
+  "name": "FlowAnalytics",
+  "type": "object",
+  "properties": {
+    "flow_id": {
+      "type": "string",
+      "description": "ID do fluxo"
+    },
+    "flow_publish_id": {
+      "type": "string"
+    },
+    "view_count": {
+      "type": "number",
+      "default": 0
+    },
+    "start_count": {
+      "type": "number",
+      "default": 0
+    },
+    "completion_count": {
+      "type": "number",
+      "default": 0
+    },
+    "abandonment_count": {
+      "type": "number",
+      "default": 0
+    },
+    "avg_completion_time": {
+      "type": "number"
+    },
+    "avg_score": {
+      "type": "number"
+    },
+    "conversion_rate": {
+      "type": "number"
+    },
+    "most_common_result": {
+      "type": "string"
+    },
+    "most_common_result_count": {
+      "type": "number"
+    },
+    "device_breakdown": {
+      "type": "object",
+      "properties": {
+        "mobile": {
+          "type": "number"
+        },
+        "tablet": {
+          "type": "number"
+        },
+        "desktop": {
+          "type": "number"
+        }
+      }
+    },
+    "source_breakdown": {
+      "type": "object",
+      "properties": {
+        "direct": {
+          "type": "number"
+        },
+        "link": {
+          "type": "number"
+        },
+        "qr": {
+          "type": "number"
+        },
+        "embed": {
+          "type": "number"
+        }
+      }
+    },
+    "node_analytics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "node_id": {
+            "type": "string"
+          },
+          "views": {
+            "type": "number"
+          },
+          "interactions": {
+            "type": "number"
+          },
+          "completions": {
+            "type": "number"
+          },
+          "abandons": {
+            "type": "number"
+          },
+          "avg_time": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "flow_id"
+  ]
+}
