@@ -1,343 +1,499 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ReactFlowProvider } from 'reactflow';
 import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Plus, Trash2, Eye, Save, Settings, ChevronUp, ChevronDown, Copy,
-} from 'lucide-react';
-import FormFieldEditor from '@/components/forms/FormFieldEditor';
-import FormPreview from '@/components/forms/FormPreview';
-import LogicBuilder from '@/components/forms/LogicBuilder';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import FormBlockPalette, { FORM_BLOCK_GROUPS } from '@/components/forms/visual/FormBlockPalette';
+import FormVisualCanvas from '@/components/forms/visual/FormVisualCanvas';
+import FormPropertiesPanel from '@/components/forms/visual/FormPropertiesPanel';
+import FormTestDialog from '@/components/forms/visual/FormTestDialog';
+import FormIntegrationPanel from '@/components/forms/FormIntegrationPanel';
 import ResultsBuilder from '@/components/forms/ResultsBuilder';
+import FormPreview from '@/components/forms/FormPreview';
+import { ArrowLeft, BarChart3, Bot, Eye, Globe2, MoreVertical, Play, Rocket, Save, Settings, Share2, Sparkles, Undo2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+const INPUT_FIELD_TYPES = new Set([
+  'short_text', 'long_text', 'number', 'date', 'time', 'datetime', 'email', 'phone', 'url', 'currency',
+  'file', 'image', 'video', 'signature', 'checkbox', 'multiple_choice', 'single_choice', 'dropdown',
+  'scale', 'nps', 'rating', 'matrix', 'custom',
+]);
+
+const DEFAULT_START_BLOCK = {
+  id: 'start',
+  kind: 'start',
+  typeLabel: 'Início',
+  label: 'Início',
+  icon: '🏠',
+  category: 'start',
+  description: 'Ponto de entrada do formulário',
+  position: { x: 40, y: 180 },
+};
+
+const EDITOR_TABS = [
+  { id: 'editor', label: 'Editor', icon: Sparkles },
+  { id: 'settings', label: 'Configurações', icon: Settings },
+  { id: 'integrations', label: 'Integrações', icon: Share2 },
+  { id: 'results', label: 'Resultados', icon: BarChart3 },
+  { id: 'publish', label: 'Publicar', icon: Globe2 },
+];
+
+function slugifyVariable(label) {
+  return (label || 'resposta')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 48) || 'resposta';
+}
+
+function getTemplate(kind) {
+  return FORM_BLOCK_GROUPS.flatMap(group => group.blocks).find(block => block.kind === kind) || FORM_BLOCK_GROUPS[0].blocks[1];
+}
+
+function getDefaultOptions(kind) {
+  if (!['single_choice', 'multiple_choice', 'dropdown'].includes(kind)) return undefined;
+  return [
+    { id: `opt-${Date.now()}-1`, label: 'Opção 1', value: 'opcao_1' },
+    { id: `opt-${Date.now()}-2`, label: 'Opção 2', value: 'opcao_2' },
+  ];
+}
+
+
+const DEFAULT_QUESTION_BLOCK = {
+  ...getTemplate('short_text'),
+  id: 'field-default-question',
+  label: 'Qual o objetivo principal deste projeto?',
+  question: 'Qual o objetivo principal deste projeto?',
+  required: true,
+  saveAsVariable: true,
+  variableName: 'objetivo_principal',
+  position: { x: 360, y: 180 },
+};
+
+const DEFAULT_EDGE = { id: 'edge-start-default-question', source: 'start', target: 'field-default-question', type: 'smoothstep' };
+
+function createBlockFromTemplate(template, position, index) {
+  const label = template.category === 'input' ? 'Nova pergunta' : template.label;
+  return {
+    ...template,
+    id: `${template.category === 'input' ? 'field' : 'block'}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    label,
+    question: template.category === 'input' ? label : undefined,
+    required: false,
+    saveAsVariable: template.category === 'input',
+    variableName: template.category === 'input' ? slugifyVariable(`${template.kind}_${index + 1}`) : undefined,
+    options: getDefaultOptions(template.kind),
+    position,
+  };
+}
+
+function fieldToBlock(field, index, visualNode) {
+  const template = getTemplate(field.type || 'short_text');
+  const label = field.label || `Pergunta ${index + 1}`;
+  return {
+    ...template,
+    id: field.id || `field-${Date.now()}-${index}`,
+    formFieldId: field.id,
+    label,
+    question: label,
+    required: !!field.required,
+    placeholder: field.placeholder || '',
+    helpText: field.helpText || '',
+    options: field.options || getDefaultOptions(field.type),
+    validation: field.validation || {},
+    saveAsVariable: field.saveAsVariable !== false,
+    variableName: field.variableName || slugifyVariable(label),
+    position: visualNode?.position || { x: 330 + (index % 3) * 280, y: 120 + Math.floor(index / 3) * 170 },
+  };
+}
+
+function normalizeVisualFlow(existingForm, fields) {
+  const visualFlow = existingForm?.visual_flow || {};
+  const visualNodes = visualFlow.blocks || visualFlow.nodes || [];
+  const visualEdges = visualFlow.edges || [];
+  const fieldBlocks = fields.map((field, index) => fieldToBlock(field, index, visualNodes.find(node => node.id === field.id || node.formFieldId === field.id)));
+  const fieldIds = new Set(fieldBlocks.map(block => block.id));
+  const nonFieldBlocks = visualNodes.filter(node => !fieldIds.has(node.id) && node.category !== 'input');
+  const startBlock = nonFieldBlocks.find(block => block.category === 'start') || DEFAULT_START_BLOCK;
+  const otherBlocks = nonFieldBlocks.filter(block => block.category !== 'start');
+  const blocks = [startBlock, ...fieldBlocks, ...otherBlocks];
+
+  if (visualEdges.length > 0) {
+    return { blocks, edges: visualEdges };
+  }
+
+  const generatedEdges = [];
+  if (fieldBlocks[0]) {
+    generatedEdges.push({ id: 'edge-start-first', source: startBlock.id, target: fieldBlocks[0].id, type: 'smoothstep' });
+  }
+  fieldBlocks.slice(0, -1).forEach((block, index) => {
+    generatedEdges.push({ id: `edge-${block.id}-${fieldBlocks[index + 1].id}`, source: block.id, target: fieldBlocks[index + 1].id, type: 'smoothstep' });
+  });
+
+  return { blocks, edges: generatedEdges };
+}
+
+function blockToField(block, formId, order) {
+  return {
+    form_id: formId,
+    label: block.question || block.label || `Pergunta ${order + 1}`,
+    type: INPUT_FIELD_TYPES.has(block.kind) ? block.kind : 'short_text',
+    required: !!block.required,
+    placeholder: block.placeholder || '',
+    helpText: block.helpText || '',
+    options: block.options || [],
+    validation: block.validation || {},
+    order,
+    conditional: !!block.conditional,
+    pageBreak: !!block.pageBreak,
+    variableName: block.variableName || slugifyVariable(block.question || block.label),
+    saveAsVariable: block.saveAsVariable !== false,
+  };
+}
+
+function blockToPreviewField(block, order) {
+  return {
+    id: block.id,
+    ...blockToField(block, 'preview', order),
+  };
+}
 
 export default function FormBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('editor');
+  const [paletteCollapsed, setPaletteCollapsed] = useState(false);
+  const [selectedBlockId, setSelectedBlockId] = useState('field-default-question');
+  const [testOpen, setTestOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [originalFieldIds, setOriginalFieldIds] = useState([]);
   const [form, setForm] = useState({
     title: 'Novo Formulário',
     description: '',
     type: 'form',
     status: 'draft',
     icon: '📋',
-    color: '#6366f1',
-    fields: [],
-    theme: { layout: 'single', progressBar: false },
+    color: '#7c3aed',
+    theme: { layout: 'visual', progressBar: true },
     logic: [],
     results: [],
+    settings: { captureEmail: false, allowMultipleResponses: true },
+    sharing: { public: false, allowEmbed: false },
   });
-  const [fields, setFields] = useState([]);
+  const [blocks, setBlocks] = useState([DEFAULT_START_BLOCK, DEFAULT_QUESTION_BLOCK]);
+  const [edges, setEdges] = useState([DEFAULT_EDGE]);
 
-  const { data: existingForm } = useQuery({
+  const { data: existingForm, isLoading } = useQuery({
     queryKey: ['form', id],
     queryFn: () => (id ? base44.entities.Form.get(id) : null),
     enabled: !!id,
   });
 
   useEffect(() => {
-    if (existingForm) {
-      setForm(existingForm);
-      if (existingForm.fields?.length) {
-        base44.entities.FormField.filter({ form_id: id }).then(setFields);
-      }
-    }
+    if (!existingForm) return;
+
+    setForm({
+      ...existingForm,
+      theme: { layout: 'visual', progressBar: true, ...(existingForm.theme || {}) },
+      settings: existingForm.settings || {},
+      sharing: existingForm.sharing || {},
+      results: existingForm.results || [],
+      logic: existingForm.logic || [],
+    });
+
+    base44.entities.FormField.filter({ form_id: id }, 'order').then((loadedFields = []) => {
+      const fallbackFields = loadedFields.length ? loadedFields : (existingForm.fields || []).filter(field => typeof field === 'object');
+      setOriginalFieldIds(fallbackFields.filter(field => field.id).map(field => field.id));
+      const visual = normalizeVisualFlow(existingForm, fallbackFields);
+      setBlocks(visual.blocks);
+      setEdges(visual.edges);
+      setSelectedBlockId(visual.blocks.find(block => block.category === 'input')?.id || visual.blocks[0]?.id || null);
+    });
   }, [existingForm, id]);
 
-  const handleAddField = () => {
-    const newField = {
-      form_id: id || 'temp',
-      label: 'Nova Pergunta',
-      type: 'short_text',
-      required: false,
-      order: fields.length,
-    };
-    setFields([...fields, { ...newField, id: `temp-${Date.now()}` }]);
+  const selectedBlock = useMemo(() => blocks.find(block => block.id === selectedBlockId), [blocks, selectedBlockId]);
+  const inputBlocks = useMemo(() => blocks.filter(block => block.category === 'input'), [blocks]);
+  const previewFields = useMemo(() => inputBlocks.map(blockToPreviewField), [inputBlocks]);
+
+  const updateSelectedBlock = (updatedBlock) => {
+    setBlocks(currentBlocks => currentBlocks.map(block => block.id === updatedBlock.id ? updatedBlock : block));
   };
 
-  const handleUpdateField = (index, updates) => {
-    const updated = [...fields];
-    updated[index] = { ...updated[index], ...updates };
-    setFields(updated);
-  };
-
-  const handleRemoveField = (index) => {
-    setFields(fields.filter((_, i) => i !== index));
-  };
-
-  const handleMoveField = (index, direction) => {
-    if ((direction === 'up' && index === 0) || (direction === 'down' && index === fields.length - 1)) {
+  const addBlock = (template, position) => {
+    if (template.kind === 'start' && blocks.some(block => block.category === 'start')) {
+      toast.info('Este formulário já possui um bloco de início.');
       return;
     }
-    const updated = [...fields];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
-    updated.forEach((f, i) => { f.order = i; });
-    setFields(updated);
+    const block = createBlockFromTemplate(template, position, inputBlocks.length);
+    setBlocks(currentBlocks => [...currentBlocks, block]);
+    setSelectedBlockId(block.id);
   };
 
-  const handleSave = async () => {
+  const deleteSelectedBlock = () => {
+    if (!selectedBlockId || selectedBlockId === 'start') return;
+    setBlocks(currentBlocks => currentBlocks.filter(block => block.id !== selectedBlockId));
+    setEdges(currentEdges => currentEdges.filter(edge => edge.source !== selectedBlockId && edge.target !== selectedBlockId));
+    setSelectedBlockId(null);
+  };
+
+  const saveForm = async () => {
+    setSaving(true);
     try {
       let formId = id;
-      const formData = {
+      const baseFormData = {
         ...form,
-        fields: fields.map((f, i) => ({ ...f, order: i })),
+        visual_flow: { blocks, edges },
+        fields: [],
       };
 
-      if (id) {
-        await base44.entities.Form.update(id, formData);
+      if (formId) {
+        await base44.entities.Form.update(formId, baseFormData);
       } else {
-        const created = await base44.entities.Form.create(formData);
+        const created = await base44.entities.Form.create(baseFormData);
         formId = created.id;
       }
 
-      for (const field of fields) {
-        if (field.id?.startsWith('temp')) {
-          await base44.entities.FormField.create({
-            ...field,
-            form_id: formId,
-          });
-        } else if (field.id) {
-          await base44.entities.FormField.update(field.id, field);
+      const savedFieldIds = [];
+      for (const [order, block] of inputBlocks.entries()) {
+        const fieldData = blockToField(block, formId, order);
+        if (block.formFieldId) {
+          await base44.entities.FormField.update(block.formFieldId, fieldData);
+          savedFieldIds.push(block.formFieldId);
+        } else if (block.id && !String(block.id).startsWith('field-')) {
+          await base44.entities.FormField.update(block.id, fieldData);
+          savedFieldIds.push(block.id);
+        } else {
+          const createdField = await base44.entities.FormField.create(fieldData);
+          savedFieldIds.push(createdField.id);
+          block.formFieldId = createdField.id;
+          block.id = createdField.id;
         }
       }
 
-      navigate(`/forms/${formId}/edit`);
+      const removedFieldIds = originalFieldIds.filter(fieldId => !savedFieldIds.includes(fieldId));
+      await Promise.all(removedFieldIds.map(fieldId => base44.entities.FormField.delete(fieldId).catch(() => null)));
+
+      const persistedBlocks = blocks.map(block => {
+        const savedIndex = inputBlocks.findIndex(inputBlock => inputBlock.id === block.id || inputBlock.formFieldId === block.formFieldId);
+        return savedIndex >= 0 ? { ...block, id: savedFieldIds[savedIndex], formFieldId: savedFieldIds[savedIndex] } : block;
+      });
+      const idMap = new Map(inputBlocks.map((block, index) => [block.id, savedFieldIds[index]]));
+      const persistedEdges = edges.map(edge => ({
+        ...edge,
+        source: idMap.get(edge.source) || edge.source,
+        target: idMap.get(edge.target) || edge.target,
+      }));
+
+      await base44.entities.Form.update(formId, {
+        ...baseFormData,
+        fields: savedFieldIds,
+        visual_flow: { blocks: persistedBlocks, edges: persistedEdges },
+      });
+
+      setBlocks(persistedBlocks);
+      setEdges(persistedEdges);
+      setOriginalFieldIds(savedFieldIds);
+      setSelectedBlockId(current => idMap.get(current) || current);
+      toast.success('Formulário salvo com sucesso!');
+      if (!id) navigate(`/forms/${formId}/edit`, { replace: true });
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('Erro ao salvar formulário:', error);
+      toast.error(error.message || 'Não foi possível salvar o formulário.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Construtor de Formulários</h1>
-          <p className="text-muted-foreground mt-1">Crie sua pesquisa com campos, lógica e resultados</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => navigate('/forms')} variant="outline">
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} className="gap-2">
-            <Save className="w-4 h-4" />
-            Salvar
-          </Button>
-        </div>
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-violet-400" />
       </div>
+    );
+  }
 
-      <Tabs defaultValue="builder" className="w-full">
-        <TabsList>
-          <TabsTrigger value="builder">Construtor</TabsTrigger>
-          <TabsTrigger value="logic">Lógica</TabsTrigger>
-          <TabsTrigger value="results">Resultados</TabsTrigger>
-          <TabsTrigger value="settings">Configurações</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
+      <header className="flex h-[76px] shrink-0 items-center justify-between border-b border-white/10 bg-slate-950/95 px-5 shadow-2xl backdrop-blur">
+        <div className="flex min-w-0 items-center gap-4">
+          <Button type="button" variant="ghost" size="icon" onClick={() => navigate('/forms')} className="text-slate-300 hover:bg-white/10 hover:text-white">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-xs text-slate-400">
+              <Bot className="h-3.5 w-3.5 text-violet-400" /> Editor Visual de Formulários
+            </p>
+            <Input
+              value={form.title}
+              onChange={(event) => setForm(current => ({ ...current, title: event.target.value }))}
+              className="mt-1 h-auto min-w-[220px] border-0 !bg-transparent p-0 text-lg font-bold !text-white shadow-none focus-visible:ring-0"
+            />
+          </div>
+        </div>
 
-        <TabsContent value="builder" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-          {/* Basic Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={form.icon}
-                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                  maxLength="2"
-                  className="text-4xl w-16 text-center border rounded p-1 bg-card"
-                />
-                <div className="flex-1 space-y-3">
-                  <Input
-                    placeholder="Título do formulário"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  />
-                  <Textarea
-                    placeholder="Descrição (opcional)"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    rows={2}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="hidden items-center gap-1 lg:flex">
+          {EDITOR_TABS.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'flex h-10 items-center gap-2 border-b-2 px-4 text-sm transition',
+                  activeTab === tab.id ? 'border-violet-400 text-white' : 'border-transparent text-slate-400 hover:text-white'
+                )}
+              >
+                <Icon className="h-4 w-4" /> {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Fields Editor */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Perguntas ({fields.length})</CardTitle>
-              <Button onClick={handleAddField} size="sm" className="gap-1">
-                <Plus className="w-4 h-4" />
-                Adicionar
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {fields.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma pergunta adicionada. Clique em "Adicionar" para começar.
-                </div>
-              ) : (
-                fields.map((field, index) => (
-                  <div key={field.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-muted-foreground">Pergunta {index + 1}</span>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleMoveField(index, 'up')}
-                          disabled={index === 0}
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleMoveField(index, 'down')}
-                          disabled={index === fields.length - 1}
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleRemoveField(index)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" className="hidden border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 sm:inline-flex">
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setTestOpen(true)} className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10">
+            <Play className="h-4 w-4" /> Testar
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={saveForm} disabled={saving} className="border-white/10 bg-white/5 text-slate-200 hover:bg-white/10">
+            <Save className="h-4 w-4" /> {saving ? 'Salvando...' : 'Salvar'}
+          </Button>
+          <Button type="button" size="sm" onClick={() => setActiveTab('publish')} className="bg-violet-600 text-white hover:bg-violet-500">
+            <Rocket className="h-4 w-4" /> Publicar
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="text-slate-400 hover:bg-white/10 hover:text-white">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </div>
+      </header>
+
+      {activeTab === 'editor' ? (
+        <div className="flex min-h-0 flex-1">
+          <FormBlockPalette collapsed={paletteCollapsed} onToggleCollapsed={() => setPaletteCollapsed(current => !current)} />
+          <main className="min-w-0 flex-1">
+            <ReactFlowProvider>
+              <FormVisualCanvas
+                blocks={blocks}
+                edges={edges}
+                selectedBlockId={selectedBlockId}
+                onBlocksChange={setBlocks}
+                onEdgesChange={setEdges}
+                onSelectBlock={setSelectedBlockId}
+                onAddBlock={addBlock}
+                onDeleteSelected={deleteSelectedBlock}
+              />
+            </ReactFlowProvider>
+          </main>
+          <FormPropertiesPanel
+            block={selectedBlock}
+            onUpdate={updateSelectedBlock}
+            onDelete={deleteSelectedBlock}
+            onClose={() => setSelectedBlockId(null)}
+          />
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto bg-slate-100 p-6 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
+          {activeTab === 'settings' && (
+            <div className="mx-auto max-w-4xl space-y-6">
+              <Card>
+                <CardHeader><CardTitle>Configurações do formulário</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-[120px_1fr]">
+                    <div className="space-y-2">
+                      <Label>Ícone</Label>
+                      <Input value={form.icon || ''} onChange={(event) => setForm(current => ({ ...current, icon: event.target.value }))} maxLength={2} className="text-center text-3xl" />
                     </div>
-                    <Input
-                      placeholder="Pergunta"
-                      value={field.label}
-                      onChange={(e) => handleUpdateField(index, { label: e.target.value })}
-                      className="font-medium"
-                    />
-                    <FormFieldEditor field={field} onUpdate={(updates) => handleUpdateField(index, updates)} />
+                    <div className="space-y-2">
+                      <Label>Descrição</Label>
+                      <Textarea value={form.description || ''} onChange={(event) => setForm(current => ({ ...current, description: event.target.value }))} rows={4} placeholder="Explique o objetivo do formulário..." />
+                    </div>
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Tipo</Label>
+                      <select value={form.type} onChange={(event) => setForm(current => ({ ...current, type: event.target.value }))} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                        <option value="form">Formulário</option>
+                        <option value="survey">Pesquisa</option>
+                        <option value="quiz">Quiz</option>
+                        <option value="diagnostic">Diagnóstico</option>
+                        <option value="intake">Intake/Briefing</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <select value={form.status} onChange={(event) => setForm(current => ({ ...current, status: event.target.value }))} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                        <option value="draft">Rascunho</option>
+                        <option value="active">Ativo</option>
+                        <option value="paused">Pausado</option>
+                        <option value="closed">Fechado</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="flex items-center justify-between rounded-xl border p-4">
+                      <span><span className="block font-medium">Barra de progresso</span><span className="text-sm text-muted-foreground">Mostra avanço ao respondente</span></span>
+                      <Switch checked={form.theme?.progressBar !== false} onCheckedChange={(checked) => setForm(current => ({ ...current, theme: { ...(current.theme || {}), progressBar: checked } }))} />
+                    </label>
+                    <label className="flex items-center justify-between rounded-xl border p-4">
+                      <span><span className="block font-medium">Múltiplas respostas</span><span className="text-sm text-muted-foreground">Permite mais de uma submissão</span></span>
+                      <Switch checked={!!form.settings?.allowMultipleResponses} onCheckedChange={(checked) => setForm(current => ({ ...current, settings: { ...(current.settings || {}), allowMultipleResponses: checked } }))} />
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-        <TabsContent value="logic" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lógica Condicional</CardTitle>
-              <p className="text-sm text-muted-foreground">Crie fluxos dinâmicos baseados nas respostas</p>
-            </CardHeader>
-            <CardContent>
-              <LogicBuilder
-                conditions={form.logic}
-                fields={fields}
-                onUpdate={(logic) => setForm({ ...form, logic })}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {activeTab === 'integrations' && <div className="mx-auto max-w-4xl"><FormIntegrationPanel form={form} onUpdate={setForm} /></div>}
 
-        <TabsContent value="results" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Páginas de Resultado</CardTitle>
-              <p className="text-sm text-muted-foreground">Crie páginas personalizadas baseadas nas respostas</p>
-            </CardHeader>
-            <CardContent>
-              <ResultsBuilder
-                results={form.results}
-                onUpdate={(results) => setForm({ ...form, results })}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {activeTab === 'results' && (
+            <div className="mx-auto max-w-4xl">
+              <Card>
+                <CardHeader><CardTitle>Páginas de resultado</CardTitle></CardHeader>
+                <CardContent><ResultsBuilder results={form.results || []} onUpdate={(results) => setForm(current => ({ ...current, results }))} /></CardContent>
+              </Card>
+            </div>
+          )}
 
-        <TabsContent value="settings" className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Tipo</label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    className="w-full mt-2 p-2 border rounded-lg bg-card"
-                  >
-                    <option value="form">Formulário</option>
-                    <option value="survey">Pesquisa</option>
-                    <option value="quiz">Quiz</option>
-                    <option value="diagnostic">Diagnóstico</option>
-                    <option value="intake">Intake</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full mt-2 p-2 border rounded-lg bg-card"
-                  >
-                    <option value="draft">Rascunho</option>
-                    <option value="active">Ativo</option>
-                    <option value="paused">Pausado</option>
-                    <option value="closed">Fechado</option>
-                  </select>
-                </div>
-              </div>
+          {activeTab === 'publish' && (
+            <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_380px]">
+              <Card>
+                <CardHeader><CardTitle>Publicação</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  <label className="flex items-center justify-between rounded-xl border p-4">
+                    <span><span className="block font-medium">Link público</span><span className="text-sm text-muted-foreground">Permite acesso por link depois de salvar</span></span>
+                    <Switch checked={!!form.sharing?.public} onCheckedChange={(checked) => setForm(current => ({ ...current, sharing: { ...(current.sharing || {}), public: checked } }))} />
+                  </label>
+                  <label className="flex items-center justify-between rounded-xl border p-4">
+                    <span><span className="block font-medium">Permitir incorporação</span><span className="text-sm text-muted-foreground">Libera uso via embed/iframe</span></span>
+                    <Switch checked={!!form.sharing?.allowEmbed} onCheckedChange={(checked) => setForm(current => ({ ...current, sharing: { ...(current.sharing || {}), allowEmbed: checked } }))} />
+                  </label>
+                  <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+                    A publicação segura por token, expiração e limite de respostas fica preparada para a próxima fase. Por enquanto, este painel centraliza as configurações já existentes do formulário.
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Eye className="h-4 w-4" /> Preview</CardTitle></CardHeader>
+                <CardContent><FormPreview form={form} fields={previewFields} /></CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      )}
 
-              <div>
-                <label className="text-sm font-medium">Layout</label>
-                <select
-                  value={form.theme?.layout}
-                  onChange={(e) => setForm({
-                    ...form,
-                    theme: { ...form.theme, layout: e.target.value },
-                  })}
-                  className="w-full mt-2 p-2 border rounded-lg bg-card"
-                >
-                  <option value="single">Uma pergunta por página</option>
-                  <option value="multi">Múltiplas perguntas</option>
-                  <option value="progressive">Progressivo</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Cor Primária</label>
-                <div className="flex gap-2 mt-2">
-                  {['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6'].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setForm({ ...form, color })}
-                      className="w-8 h-8 rounded border-2"
-                      style={{
-                        backgroundColor: color,
-                        borderColor: form.color === color ? '#000' : '#ccc',
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="preview" className="max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
-          <FormPreview form={form} fields={fields} />
-        </TabsContent>
-      </Tabs>
+      <FormTestDialog open={testOpen} onOpenChange={setTestOpen} form={form} blocks={blocks} edges={edges} />
     </div>
   );
 }
