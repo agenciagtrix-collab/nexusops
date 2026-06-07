@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import FormBlockPalette, { FORM_BLOCK_GROUPS } from '@/components/forms/visual/FormBlockPalette';
 import FormVisualCanvas from '@/components/forms/visual/FormVisualCanvas';
 import FormPropertiesPanel from '@/components/forms/visual/FormPropertiesPanel';
+import FormEdgePropertiesPanel from '@/components/forms/visual/FormEdgePropertiesPanel';
 import FormTestDialog from '@/components/forms/visual/FormTestDialog';
 import FormIntegrationPanel from '@/components/forms/FormIntegrationPanel';
 import ResultsBuilder from '@/components/forms/ResultsBuilder';
@@ -173,6 +174,7 @@ export default function FormBuilder() {
   const [activeTab, setActiveTab] = useState('editor');
   const [paletteCollapsed, setPaletteCollapsed] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState('field-default-question');
+  const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const [testOpen, setTestOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [originalFieldIds, setOriginalFieldIds] = useState([]);
@@ -221,11 +223,18 @@ export default function FormBuilder() {
   }, [existingForm, id]);
 
   const selectedBlock = useMemo(() => blocks.find(block => block.id === selectedBlockId), [blocks, selectedBlockId]);
+  const selectedEdge = useMemo(() => edges.find(edge => edge.id === selectedEdgeId), [edges, selectedEdgeId]);
+  const selectedEdgeSource = useMemo(() => blocks.find(block => block.id === selectedEdge?.source), [blocks, selectedEdge]);
+  const selectedEdgeTarget = useMemo(() => blocks.find(block => block.id === selectedEdge?.target), [blocks, selectedEdge]);
   const inputBlocks = useMemo(() => blocks.filter(block => block.category === 'input'), [blocks]);
   const previewFields = useMemo(() => inputBlocks.map(blockToPreviewField), [inputBlocks]);
 
   const updateSelectedBlock = (updatedBlock) => {
     setBlocks(currentBlocks => currentBlocks.map(block => block.id === updatedBlock.id ? updatedBlock : block));
+  };
+
+  const updateSelectedEdge = (updatedEdge) => {
+    setEdges(currentEdges => currentEdges.map(edge => edge.id === updatedEdge.id ? updatedEdge : edge));
   };
 
   const addBlock = (template, position) => {
@@ -235,6 +244,7 @@ export default function FormBuilder() {
     }
     const block = createBlockFromTemplate(template, position, inputBlocks.length);
     setBlocks(currentBlocks => [...currentBlocks, block]);
+    setSelectedEdgeId(null);
     setSelectedBlockId(block.id);
   };
 
@@ -243,6 +253,12 @@ export default function FormBuilder() {
     setBlocks(currentBlocks => currentBlocks.filter(block => block.id !== selectedBlockId));
     setEdges(currentEdges => currentEdges.filter(edge => edge.source !== selectedBlockId && edge.target !== selectedBlockId));
     setSelectedBlockId(null);
+  };
+
+  const deleteSelectedEdge = () => {
+    if (!selectedEdgeId) return;
+    setEdges(currentEdges => currentEdges.filter(edge => edge.id !== selectedEdgeId));
+    setSelectedEdgeId(null);
   };
 
   const saveForm = async () => {
@@ -387,20 +403,33 @@ export default function FormBuilder() {
                 blocks={blocks}
                 edges={edges}
                 selectedBlockId={selectedBlockId}
+                selectedEdgeId={selectedEdgeId}
                 onBlocksChange={setBlocks}
                 onEdgesChange={setEdges}
                 onSelectBlock={setSelectedBlockId}
+                onSelectEdge={setSelectedEdgeId}
                 onAddBlock={addBlock}
-                onDeleteSelected={deleteSelectedBlock}
+                onDeleteSelected={selectedEdgeId ? deleteSelectedEdge : deleteSelectedBlock}
               />
             </ReactFlowProvider>
           </main>
-          <FormPropertiesPanel
-            block={selectedBlock}
-            onUpdate={updateSelectedBlock}
-            onDelete={deleteSelectedBlock}
-            onClose={() => setSelectedBlockId(null)}
-          />
+          {selectedEdge ? (
+            <FormEdgePropertiesPanel
+              edge={selectedEdge}
+              sourceBlock={selectedEdgeSource}
+              targetBlock={selectedEdgeTarget}
+              onUpdate={updateSelectedEdge}
+              onDelete={deleteSelectedEdge}
+              onClose={() => setSelectedEdgeId(null)}
+            />
+          ) : (
+            <FormPropertiesPanel
+              block={selectedBlock}
+              onUpdate={updateSelectedBlock}
+              onDelete={deleteSelectedBlock}
+              onClose={() => setSelectedBlockId(null)}
+            />
+          )}
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto bg-slate-100 p-6 text-slate-950 dark:bg-slate-950 dark:text-slate-100">

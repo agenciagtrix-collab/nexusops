@@ -4,19 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Check, ChevronRight, RotateCcw } from 'lucide-react';
-
-function getNextBlockId(blockId, edges) {
-  return edges.find(edge => edge.source === blockId)?.target || null;
-}
-
-function getStartBlock(blocks, edges) {
-  const start = blocks.find(block => block.category === 'start');
-  if (start) {
-    const first = getNextBlockId(start.id, edges);
-    return blocks.find(block => block.id === first) || blocks.find(block => block.category === 'input') || start;
-  }
-  return blocks.find(block => block.category === 'input') || blocks[0];
-}
+import { getNextBlockId, getStartBlock, isInputBlock } from '@/lib/form-flow';
 
 function renderField(block, value, onChange) {
   if (block.kind === 'long_text') {
@@ -84,7 +72,7 @@ function renderField(block, value, onChange) {
 }
 
 export default function FormTestDialog({ open, onOpenChange, form, blocks, edges }) {
-  const inputBlocks = useMemo(() => blocks.filter(block => block.category === 'input'), [blocks]);
+  const inputBlocks = useMemo(() => blocks.filter(isInputBlock), [blocks]);
   const [currentId, setCurrentId] = useState(null);
   const [answers, setAnswers] = useState({});
   const [completed, setCompleted] = useState(false);
@@ -106,7 +94,7 @@ export default function FormTestDialog({ open, onOpenChange, form, blocks, edges
 
   const handleNext = () => {
     if (!currentBlock) return;
-    const nextId = getNextBlockId(currentBlock.id, edges);
+    const nextId = getNextBlockId(currentBlock.id, edges, answers);
     const nextBlock = blocks.find(block => block.id === nextId);
     if (nextBlock && nextBlock.category !== 'result') {
       setCurrentId(nextBlock.id);
