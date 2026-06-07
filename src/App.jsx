@@ -37,7 +37,7 @@ import AIAgents from '@/pages/AIAgents';
 import AIAgentForm from '@/pages/AIAgentForm';
 import AIAgentChat from '@/pages/AIAgentChat';
 import Forms from '@/pages/Forms';
-import FormVisualBuilder from '@/pages/FormVisualBuilder';
+import FormBuilder from '@/pages/FormBuilder';
 import FormResponses from '@/pages/FormResponses';
 import FormAnalytics from '@/pages/FormAnalytics';
 import FormTemplates from '@/pages/FormTemplates';
@@ -113,8 +113,8 @@ const AuthenticatedApp = () => {
           <Route path="/ai-agents/chat" element={<AIAgentChat />} />
           <Route path="/ai-agents/chat/:id" element={<AIAgentChat />} />
           <Route path="/forms" element={<Forms />} />
-          <Route path="/forms/new" element={<FormVisualBuilder />} />
-          <Route path="/forms/:id/edit" element={<FormVisualBuilder />} />
+          <Route path="/forms/new" element={<FormBuilder />} />
+          <Route path="/forms/:id/edit" element={<FormBuilder />} />
           <Route path="/forms/:id/responses" element={<FormResponses />} />
           <Route path="/forms/:id/analytics" element={<FormAnalytics />} />
           <Route path="/form-templates" element={<FormTemplates />} />

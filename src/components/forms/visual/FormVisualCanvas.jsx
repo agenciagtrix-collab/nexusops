@@ -1,157 +1,135 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   addEdge,
-  useEdgesState,
-  useNodesState,
+  applyEdgeChanges,
+  applyNodeChanges,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import FormVisualBlockNode from './FormVisualBlockNode';
+import { Button } from '@/components/ui/button';
+import { Maximize2, MousePointer2, Move, Plus, Trash2 } from 'lucide-react';
+import FormVisualNode from './FormVisualNode';
 
-const nodeTypes = {
-  formBlock: FormVisualBlockNode,
-};
+const nodeTypes = { formVisual: FormVisualNode };
 
-export default function FormVisualCanvas({
-  nodes,
-  edges,
-  selectedNodeId,
-  onChange,
-  onDropBlock,
-  onSelectNode,
-}) {
-  const flowNodes = useMemo(() => nodes.map(node => ({
-    id: node.id,
-    type: 'formBlock',
-    position: node.position,
-    selected: node.id === selectedNodeId,
-    data: {
-      ...node.data,
-      type: node.type,
-      label: node.label,
-    },
-  })), [nodes, selectedNodeId]);
+function toReactFlowNode(block, selectedBlockId) {
+  return {
+    id: block.id,
+    type: 'formVisual',
+    position: block.position || { x: 0, y: 0 },
+    selected: block.id === selectedBlockId,
+    data: { block },
+  };
+}
 
-  const flowEdges = useMemo(() => edges.map(edge => ({
-    ...edge,
-    animated: edge.animated ?? false,
-    style: { stroke: '#94a3b8', strokeWidth: 2 },
-    labelStyle: { fill: '#cbd5e1', fontSize: 12 },
-    labelBgStyle: { fill: '#0f172a', fillOpacity: 0.9 },
-  })), [edges]);
+export default function FormVisualCanvas({ blocks, edges, selectedBlockId, onBlocksChange, onEdgesChange, onSelectBlock, onAddBlock, onDeleteSelected }) {
+  const { screenToFlowPosition, fitView, zoomIn, zoomOut } = useReactFlow();
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
-  const [internalNodes, setInternalNodes, handleNodesChange] = useNodesState(flowNodes);
-  const [internalEdges, setInternalEdges, handleEdgesChange] = useEdgesState(flowEdges);
+  const nodes = useMemo(() => blocks.map(block => toReactFlowNode(block, selectedBlockId)), [blocks, selectedBlockId]);
 
-  React.useEffect(() => {
-    setInternalNodes(flowNodes);
-  }, [flowNodes, setInternalNodes]);
-
-  React.useEffect(() => {
-    setInternalEdges(flowEdges);
-  }, [flowEdges, setInternalEdges]);
-
-  const emitNodes = useCallback((nextFlowNodes) => {
-    const nextNodes = nextFlowNodes.map(flowNode => {
-      const sourceNode = nodes.find(node => node.id === flowNode.id);
-      return {
-        ...sourceNode,
-        position: flowNode.position,
-      };
-    }).filter(Boolean);
-    onChange({ nodes: nextNodes, edges });
-  }, [edges, nodes, onChange]);
-
-  const emitEdges = useCallback((nextFlowEdges) => {
-    const nextEdges = nextFlowEdges.map(edge => ({
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      label: edge.label || '',
+  const handleNodesChange = useCallback((changes) => {
+    const nextNodes = applyNodeChanges(changes, nodes);
+    onBlocksChange(blocks.map(block => {
+      const next = nextNodes.find(node => node.id === block.id);
+      return next ? { ...block, position: next.position } : block;
     }));
-    onChange({ nodes, edges: nextEdges });
-  }, [nodes, onChange]);
+  }, [blocks, nodes, onBlocksChange]);
 
-  const onNodesChangeInternal = useCallback((changes) => {
-    handleNodesChange(changes);
-    setInternalNodes(current => {
-      const next = current.map(node => {
-        const change = changes.find(item => item.id === node.id && item.type === 'position' && item.position);
-        return change ? { ...node, position: change.position } : node;
-      }).filter(node => !changes.some(item => item.id === node.id && item.type === 'remove'));
-      emitNodes(next);
-      return next;
-    });
-  }, [emitNodes, handleNodesChange, setInternalNodes]);
+  const handleEdgesChange = useCallback((changes) => {
+    onEdgesChange(applyEdgeChanges(changes, edges));
+  }, [edges, onEdgesChange]);
 
-  const onEdgesChangeInternal = useCallback((changes) => {
-    handleEdgesChange(changes);
-    setInternalEdges(current => {
-      const next = current.filter(edge => !changes.some(item => item.id === edge.id && item.type === 'remove'));
-      emitEdges(next);
-      return next;
-    });
-  }, [emitEdges, handleEdgesChange, setInternalEdges]);
-
-  const onConnect = useCallback((connection) => {
-    const newEdge = {
-      id: `edge-${Date.now()}`,
-      source: connection.source,
-      target: connection.target,
-      label: '',
-    };
-    const nextEdges = addEdge(newEdge, edges);
-    onChange({ nodes, edges: nextEdges });
-  }, [edges, nodes, onChange]);
+  const handleConnect = useCallback((connection) => {
+    const existing = edges.some(edge => edge.source === connection.source && edge.target === connection.target);
+    if (existing) return;
+    onEdgesChange(addEdge({ ...connection, id: `edge-${Date.now()}`, type: 'smoothstep', animated: false }, edges));
+  }, [edges, onEdgesChange]);
 
   const handleDrop = useCallback((event) => {
     event.preventDefault();
-    const blockType = event.dataTransfer.getData('formBlockType');
-    if (!blockType) return;
-
-    const bounds = event.currentTarget.getBoundingClientRect();
-    onDropBlock(blockType, {
-      x: event.clientX - bounds.left - 110,
-      y: event.clientY - bounds.top - 40,
-    });
-  }, [onDropBlock]);
+    setIsDraggingOver(false);
+    const rawBlock = event.dataTransfer.getData('application/x-form-block');
+    if (!rawBlock) return;
+    const template = JSON.parse(rawBlock);
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    onAddBlock(template, position);
+  }, [onAddBlock, screenToFlowPosition]);
 
   return (
     <div
-      className="h-full w-full bg-slate-950"
-      onDrop={handleDrop}
+      className="relative h-full w-full overflow-hidden bg-[#0b1120]"
       onDragOver={(event) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'copy';
+        setIsDraggingOver(true);
       }}
+      onDragLeave={() => setIsDraggingOver(false)}
+      onDrop={handleDrop}
     >
       <ReactFlow
-        nodes={internalNodes}
-        edges={internalEdges}
+        nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
-        onNodesChange={onNodesChangeInternal}
-        onEdgesChange={onEdgesChangeInternal}
-        onConnect={onConnect}
-        onNodeClick={(event, node) => {
-          event.stopPropagation();
-          onSelectNode(node.id);
-        }}
-        onPaneClick={() => onSelectNode(null)}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
+        onNodeClick={(_, node) => onSelectBlock(node.id)}
+        onPaneClick={() => onSelectBlock(null)}
         fitView
-        minZoom={0.35}
-        maxZoom={1.8}
+        fitViewOptions={{ padding: 0.25 }}
         deleteKeyCode={['Backspace', 'Delete']}
+        className="form-visual-flow"
       >
-        <Background color="#334155" gap={18} size={1} />
-        <Controls className="!border-slate-800 !bg-slate-900 !text-slate-100" />
+        <Background color="rgba(148,163,184,0.22)" gap={18} size={1} />
+        <Controls className="!border !border-white/10 !bg-slate-950/90 !shadow-xl [&_button]:!border-white/10 [&_button]:!bg-slate-950 [&_button]:!text-slate-200" />
         <MiniMap
-          className="!border !border-slate-800 !bg-slate-900"
-          nodeColor="#6d5dfc"
-          maskColor="rgba(2, 6, 23, 0.65)"
+          pannable
+          zoomable
+          className="!bottom-6 !left-6 !right-auto !h-32 !w-56 !rounded-xl !border !border-white/10 !bg-slate-950/90 !shadow-2xl"
+          nodeColor={(node) => {
+            const category = node.data?.block?.category;
+            if (category === 'start') return '#22c55e';
+            if (category === 'logic') return '#3b82f6';
+            if (category === 'action') return '#f59e0b';
+            if (category === 'ai') return '#d946ef';
+            if (category === 'result') return '#f43f5e';
+            return '#8b5cf6';
+          }}
         />
       </ReactFlow>
+
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.16),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.12),transparent_28%)]" />
+
+      <div className="absolute left-1/2 top-6 z-10 flex -translate-x-1/2 items-center overflow-hidden rounded-xl border border-white/10 bg-slate-950/85 text-slate-200 shadow-2xl backdrop-blur">
+        <button className="flex h-11 items-center gap-2 border-r border-white/10 px-4 text-sm text-violet-300">
+          <MousePointer2 className="h-4 w-4" /> Editor
+        </button>
+        <button className="flex h-11 items-center gap-2 border-r border-white/10 px-4 text-sm text-slate-400">
+          <Move className="h-4 w-4" /> Mover
+        </button>
+        <button onClick={() => zoomOut()} className="h-11 border-r border-white/10 px-4 text-lg text-slate-300 hover:bg-white/10">−</button>
+        <button onClick={() => fitView({ padding: 0.25 })} className="flex h-11 items-center gap-2 border-r border-white/10 px-4 text-sm text-slate-300 hover:bg-white/10">
+          <Maximize2 className="h-4 w-4" /> Ajustar
+        </button>
+        <button onClick={() => zoomIn()} className="h-11 px-4 text-lg text-slate-300 hover:bg-white/10">+</button>
+      </div>
+
+      <div className="absolute bottom-6 right-6 z-10 flex items-center gap-2">
+        <Button type="button" size="sm" variant="secondary" className="border border-white/10 bg-slate-950/90 text-slate-100 hover:bg-slate-900" onClick={onDeleteSelected} disabled={!selectedBlockId}>
+          <Trash2 className="h-4 w-4" /> Excluir
+        </Button>
+        <Button type="button" size="sm" className="bg-violet-600 text-white hover:bg-violet-500" onClick={() => onAddBlock({ kind: 'short_text', typeLabel: 'Campo de Texto', label: 'Nova pergunta', icon: 'T', category: 'input', description: 'Resposta curta em texto' }, { x: 120, y: 120 })}>
+          <Plus className="h-4 w-4" /> Pergunta
+        </Button>
+      </div>
+
+      {isDraggingOver && (
+        <div className="pointer-events-none absolute inset-6 z-20 rounded-2xl border-2 border-dashed border-violet-400/70 bg-violet-500/10" />
+      )}
     </div>
   );
 }
