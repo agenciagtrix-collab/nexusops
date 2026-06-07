@@ -163,6 +163,24 @@
           "type": "number"
         }
       }
+    },
+    "visual_flow": {
+      "type": "object",
+      "description": "Estrutura visual do editor de formul\u00e1rios: blocos, conex\u00f5es e metadados do canvas",
+      "properties": {
+        "blocks": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
     }
   },
   "required": [
