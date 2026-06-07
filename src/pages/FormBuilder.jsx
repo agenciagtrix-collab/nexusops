@@ -205,7 +205,7 @@ export default function FormBuilder() {
     theme: { layout: 'visual', progressBar: true },
     logic: [],
     results: [],
-    settings: { captureEmail: false, allowMultipleResponses: true },
+    settings: { captureEmail: false, allowMultipleResponses: true, limitResponses: false, responseLimit: 100 },
     sharing: { public: false, allowEmbed: false },
   });
   const [blocks, setBlocks] = useState([DEFAULT_START_BLOCK, DEFAULT_QUESTION_BLOCK]);
@@ -585,6 +585,24 @@ export default function FormBuilder() {
                     <span><span className="block font-medium">Permitir incorporação</span><span className="text-sm text-muted-foreground">Libera uso via embed/iframe</span></span>
                     <Switch checked={!!form.sharing?.allowEmbed} onCheckedChange={(checked) => setForm(current => ({ ...current, sharing: { ...(current.sharing || {}), allowEmbed: checked } }))} />
                   </label>
+                  <label className="flex items-center justify-between rounded-xl border p-4">
+                    <span><span className="block font-medium">Limitar respostas</span><span className="text-sm text-muted-foreground">Bloqueia novas respostas ao atingir o total definido</span></span>
+                    <Switch checked={!!form.settings?.limitResponses} onCheckedChange={(checked) => setForm(current => ({ ...current, settings: { ...(current.settings || {}), limitResponses: checked } }))} />
+                  </label>
+                  {form.settings?.limitResponses && (
+                    <div className="space-y-2 rounded-xl border p-4">
+                      <Label>Limite de respostas</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={form.settings?.responseLimit || 100}
+                        onChange={(event) => {
+                          const responseLimit = Math.max(1, Number(event.target.value) || 1);
+                          setForm(current => ({ ...current, settings: { ...(current.settings || {}), responseLimit } }));
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
                     A publicação valida o fluxo visual antes de ativar o formulário. Conexões quebradas, perguntas vazias e blocos essenciais ausentes bloqueiam a publicação.
                   </div>
