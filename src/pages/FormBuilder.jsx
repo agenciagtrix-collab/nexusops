@@ -18,8 +18,25 @@ import FormTestDialog from '@/components/forms/visual/FormTestDialog';
 import FormIntegrationPanel from '@/components/forms/FormIntegrationPanel';
 import ResultsBuilder from '@/components/forms/ResultsBuilder';
 import FormPreview from '@/components/forms/FormPreview';
-import { ArrowLeft, BarChart3, Bot, Eye, Globe2, MoreVertical, Play, Rocket, Save, Settings, Share2, Sparkles, Undo2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  Bot,
+  CheckCircle2,
+  Eye,
+  Globe2,
+  MoreVertical,
+  Play,
+  Rocket,
+  Save,
+  Settings,
+  Share2,
+  Sparkles,
+  Undo2,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { validateVisualFlow } from '@/lib/form-flow';
 
 const INPUT_FIELD_TYPES = new Set([
   'short_text', 'long_text', 'number', 'date', 'time', 'datetime', 'email', 'phone', 'url', 'currency',
@@ -228,6 +245,7 @@ export default function FormBuilder() {
   const selectedEdgeTarget = useMemo(() => blocks.find(block => block.id === selectedEdge?.target), [blocks, selectedEdge]);
   const inputBlocks = useMemo(() => blocks.filter(block => block.category === 'input'), [blocks]);
   const previewFields = useMemo(() => inputBlocks.map(blockToPreviewField), [inputBlocks]);
+  const flowValidation = useMemo(() => validateVisualFlow(blocks, edges), [blocks, edges]);
 
   const updateSelectedBlock = (updatedBlock) => {
     setBlocks(currentBlocks => currentBlocks.map(block => block.id === updatedBlock.id ? updatedBlock : block));
@@ -261,12 +279,19 @@ export default function FormBuilder() {
     setSelectedEdgeId(null);
   };
 
-  const saveForm = async () => {
+  const saveForm = async (formOverrides = {}, successMessage = 'Formulário salvo com sucesso!') => {
     setSaving(true);
     try {
       let formId = id;
-      const baseFormData = {
+      const formToSave = {
         ...form,
+        ...formOverrides,
+        theme: { ...(form.theme || {}), ...(formOverrides.theme || {}) },
+        settings: { ...(form.settings || {}), ...(formOverrides.settings || {}) },
+        sharing: { ...(form.sharing || {}), ...(formOverrides.sharing || {}) },
+      };
+      const baseFormData = {
+        ...formToSave,
         visual_flow: { blocks, edges },
         fields: [],
       };
@@ -315,11 +340,12 @@ export default function FormBuilder() {
         visual_flow: { blocks: persistedBlocks, edges: persistedEdges },
       });
 
+      setForm(formToSave);
       setBlocks(persistedBlocks);
       setEdges(persistedEdges);
       setOriginalFieldIds(savedFieldIds);
       setSelectedBlockId(current => idMap.get(current) || current);
-      toast.success('Formulário salvo com sucesso!');
+      toast.success(successMessage);
       if (!id) navigate(`/forms/${formId}/edit`, { replace: true });
     } catch (error) {
       console.error('Erro ao salvar formulário:', error);
@@ -327,6 +353,19 @@ export default function FormBuilder() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const publishForm = () => {
+    if (flowValidation.errors.length) {
+      setActiveTab('publish');
+      toast.error('Corrija os erros do fluxo antes de publicar.');
+      return;
+    }
+
+    saveForm({
+      status: 'active',
+      sharing: { ...(form.sharing || {}), public: true },
+    }, 'Formulário publicado com sucesso!');
   };
 
   if (isLoading) {
@@ -497,6 +536,44 @@ export default function FormBuilder() {
 
           {activeTab === 'publish' && (
             <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_380px]">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {flowValidation.errors.length ? (
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    )}
+                    Validação do fluxo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {!flowValidation.issues.length ? (
+                    <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4" />
+                      <span>Fluxo pronto para publicação.</span>
+                    </div>
+                  ) : (
+                    flowValidation.issues.map((issue, index) => (
+                      <div
+                        key={`${issue.code}-${issue.targetId || index}`}
+                        className={cn(
+                          'flex items-start gap-3 rounded-xl border p-4 text-sm',
+                          issue.severity === 'error'
+                            ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200'
+                            : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200'
+                        )}
+                      >
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <div>
+                          <div className="font-medium">{issue.severity === 'error' ? 'Erro' : 'Aviso'}</div>
+                          <div>{issue.message}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader><CardTitle>Publicação</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -509,7 +586,17 @@ export default function FormBuilder() {
                     <Switch checked={!!form.sharing?.allowEmbed} onCheckedChange={(checked) => setForm(current => ({ ...current, sharing: { ...(current.sharing || {}), allowEmbed: checked } }))} />
                   </label>
                   <div className="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-                    A publicação segura por token, expiração e limite de respostas fica preparada para a próxima fase. Por enquanto, este painel centraliza as configurações já existentes do formulário.
+                    A publicação valida o fluxo visual antes de ativar o formulário. Conexões quebradas, perguntas vazias e blocos essenciais ausentes bloqueiam a publicação.
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button type="button" onClick={publishForm} disabled={saving || flowValidation.errors.length > 0} className="gap-2">
+                      <Rocket className="h-4 w-4" />
+                      {saving ? 'Publicando...' : 'Salvar e publicar'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setTestOpen(true)} className="gap-2">
+                      <Play className="h-4 w-4" />
+                      Testar fluxo
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
