@@ -4,9 +4,56 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import FormFieldRenderer from '@/components/forms/FormFieldRenderer';
 import { blockToField, getNextBlockId, getStartBlock, isInputBlock } from '@/lib/form-flow';
+
+const FORM_UNAVAILABLE_COPY = {
+  draft: {
+    title: 'Formulario nao publicado',
+    message: 'Este formulario ainda esta em rascunho e nao aceita respostas publicas.',
+  },
+  paused: {
+    title: 'Formulario pausado',
+    message: 'Este formulario esta temporariamente pausado.',
+  },
+  closed: {
+    title: 'Formulario encerrado',
+    message: 'Este formulario foi encerrado e nao aceita novas respostas.',
+  },
+  private: {
+    title: 'Link indisponivel',
+    message: 'O compartilhamento publico deste formulario esta desativado.',
+  },
+  login: {
+    title: 'Acesso restrito',
+    message: 'Este formulario exige login para ser respondido.',
+  },
+  limit: {
+    title: 'Limite de respostas atingido',
+    message: 'Este formulario ja recebeu o numero maximo de respostas permitido.',
+  },
+};
+
+function UnavailableForm({ form, reason }) {
+  const color = form?.color || '#7c3aed';
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: `${color}10` }}>
+      <Card className="max-w-xl w-full">
+        <CardContent className="pt-12 text-center space-y-5">
+          <div className="flex justify-center">
+            <AlertCircle className="w-14 h-14 text-amber-500" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{reason.title}</h2>
+            <p className="text-muted-foreground mt-2">{reason.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function FormShare() {
   const { id } = useParams();
@@ -26,6 +73,29 @@ export default function FormShare() {
     queryFn: () => base44.entities.FormField.filter({ form_id: id }, '-order'),
     enabled: !!id,
   });
+
+  const responseLimit = Number(form?.settings?.responseLimit || 0);
+  const hasResponseLimit = !!form?.settings?.limitResponses && responseLimit > 0;
+  const { data: existingResponses = [], isLoading: isLoadingResponses, refetch: refetchResponses } = useQuery({
+    queryKey: ['formResponseCount', id],
+    queryFn: () => base44.entities.FormResponse.filter({ form_id: id }),
+    enabled: !!id && hasResponseLimit,
+  });
+  const submittedResponseCount = useMemo(
+    () => existingResponses.filter(response => response.status === 'submitted').length,
+    [existingResponses]
+  );
+  const responseLimitReached = hasResponseLimit && submittedResponseCount >= responseLimit;
+  const unavailableReason = useMemo(() => {
+    if (!form) return null;
+    if (form.status !== 'active') {
+      return FORM_UNAVAILABLE_COPY[form.status] || FORM_UNAVAILABLE_COPY.draft;
+    }
+    if (!form.sharing?.public) return FORM_UNAVAILABLE_COPY.private;
+    if (form.settings?.requireLogin) return FORM_UNAVAILABLE_COPY.login;
+    if (responseLimitReached) return FORM_UNAVAILABLE_COPY.limit;
+    return null;
+  }, [form, responseLimitReached]);
 
   const visualBlocks = useMemo(() => form?.visual_flow?.blocks || [], [form]);
   const visualEdges = useMemo(() => form?.visual_flow?.edges || [], [form]);
@@ -111,6 +181,21 @@ export default function FormShare() {
   };
 
   const handleSubmit = async () => {
+    if (unavailableReason) {
+      alert(unavailableReason.message);
+      return;
+    }
+
+    if (hasResponseLimit) {
+      const { data: latestResponses = existingResponses } = await refetchResponses();
+      const latestSubmittedCount = latestResponses.filter(response => response.status === 'submitted').length;
+
+      if (latestSubmittedCount >= responseLimit) {
+        alert(FORM_UNAVAILABLE_COPY.limit.message);
+        return;
+      }
+    }
+
     const visibleFields = hasVisualFlow
       ? visualInputBlocks
         .filter(block => responses[block.id] !== undefined)
@@ -219,12 +304,16 @@ export default function FormShare() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingResponses) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   }
 
   if (!form) {
     return <div className="flex items-center justify-center min-h-screen">Formulário não encontrado</div>;
+  }
+
+  if (unavailableReason) {
+    return <UnavailableForm form={form} reason={unavailableReason} />;
   }
 
   if (submitted && resultPage) {
