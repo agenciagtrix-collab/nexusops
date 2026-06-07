@@ -1,13 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
 import FormFieldRenderer from '@/components/forms/FormFieldRenderer';
+import { blockToField, getNextBlockId, getStartBlock, isInputBlock } from '@/lib/form-flow';
 
 export default function FormShare() {
   const { id } = useParams();
@@ -15,6 +14,7 @@ export default function FormShare() {
   const [responses, setResponses] = useState({});
   const [resultPage, setResultPage] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [currentBlockId, setCurrentBlockId] = useState(null);
 
   const { data: form, isLoading } = useQuery({
     queryKey: ['form', id],
@@ -26,6 +26,27 @@ export default function FormShare() {
     queryFn: () => base44.entities.FormField.filter({ form_id: id }, '-order'),
     enabled: !!id,
   });
+
+  const visualBlocks = useMemo(() => form?.visual_flow?.blocks || [], [form]);
+  const visualEdges = useMemo(() => form?.visual_flow?.edges || [], [form]);
+  const hasVisualFlow = visualBlocks.some(isInputBlock);
+  const visualInputBlocks = useMemo(() => visualBlocks.filter(isInputBlock), [visualBlocks]);
+  const currentVisualBlock = useMemo(() => {
+    if (!hasVisualFlow) return null;
+    const start = currentBlockId
+      ? visualBlocks.find(block => block.id === currentBlockId)
+      : getStartBlock(visualBlocks, visualEdges, responses);
+    return start || visualInputBlocks[0] || null;
+  }, [currentBlockId, hasVisualFlow, responses, visualBlocks, visualEdges, visualInputBlocks]);
+  const currentVisualField = currentVisualBlock && isInputBlock(currentVisualBlock)
+    ? blockToField(currentVisualBlock, id, visualInputBlocks.findIndex(block => block.id === currentVisualBlock.id))
+    : null;
+
+  useEffect(() => {
+    if (hasVisualFlow && !currentBlockId) {
+      setCurrentBlockId(getStartBlock(visualBlocks, visualEdges, responses)?.id || null);
+    }
+  }, [currentBlockId, hasVisualFlow, responses, visualBlocks, visualEdges]);
 
   const submitMutation = useMutation({
     mutationFn: async (data) => {
@@ -90,7 +111,11 @@ export default function FormShare() {
   };
 
   const handleSubmit = async () => {
-    const visibleFields = getVisibleFields();
+    const visibleFields = hasVisualFlow
+      ? visualInputBlocks
+        .filter(block => responses[block.id] !== undefined)
+        .map((block, index) => blockToField(block, id, index))
+      : getVisibleFields();
     const requiredFields = visibleFields.filter(f => f.required);
     
     const allFilled = requiredFields.every(f => responses[f.id] !== undefined && responses[f.id] !== '');
@@ -100,7 +125,7 @@ export default function FormShare() {
     }
 
     const scoreSum = Object.entries(responses).reduce((sum, [fieldId, value]) => {
-      const field = fields.find(f => f.id === fieldId);
+      const field = visibleFields.find(f => f.id === fieldId) || fields.find(f => f.id === fieldId);
       if (field?.type === 'nps' || field?.type === 'rating') {
         return sum + Number(value);
       }
@@ -119,6 +144,68 @@ export default function FormShare() {
   };
 
   const startTime = React.useRef(Date.now()).current;
+
+  const resolveNextVisualBlock = (block) => {
+    let nextId = getNextBlockId(block.id, visualEdges, responses);
+    const visited = new Set([block.id]);
+
+    while (nextId && !visited.has(nextId)) {
+      visited.add(nextId);
+      const nextBlock = visualBlocks.find(item => item.id === nextId);
+      if (!nextBlock) return null;
+      if (isInputBlock(nextBlock) || nextBlock.category === 'result') return nextBlock;
+      nextId = getNextBlockId(nextBlock.id, visualEdges, responses);
+    }
+
+    return null;
+  };
+
+  const handleVisualNext = () => {
+    if (!currentVisualBlock) return;
+
+    if (currentVisualField?.required) {
+      const value = responses[currentVisualField.id];
+      const empty = Array.isArray(value) ? value.length === 0 : value === undefined || value === '';
+      if (empty) {
+        alert('Por favor, preencha o campo obrigatorio');
+        return;
+      }
+    }
+
+    const nextBlock = resolveNextVisualBlock(currentVisualBlock);
+    if (nextBlock?.category === 'result') {
+      setResultPage({
+        title: nextBlock.label || 'Obrigado',
+        description: nextBlock.description || 'Suas respostas foram enviadas com sucesso.',
+        content: nextBlock.content || {},
+        actions: nextBlock.actions || [],
+      });
+      handleSubmit();
+      return;
+    }
+
+    if (nextBlock) {
+      setCurrentBlockId(nextBlock.id);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleVisualPrev = () => {
+    if (!currentVisualBlock) return;
+    let incoming = visualEdges.find(edge => edge.target === currentVisualBlock.id);
+    const visited = new Set([currentVisualBlock.id]);
+
+    while (incoming && !visited.has(incoming.source)) {
+      visited.add(incoming.source);
+      const previousBlock = visualBlocks.find(block => block.id === incoming.source);
+      if (isInputBlock(previousBlock)) {
+        setCurrentBlockId(previousBlock.id);
+        return;
+      }
+      incoming = visualEdges.find(edge => edge.target === incoming.source);
+    }
+  };
 
   const handleNext = () => {
     if (currentPageIndex < pageBreaks.length - 1) {
@@ -158,6 +245,78 @@ export default function FormShare() {
                 {action.label}
               </Button>
             ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: form.color + '10' }}>
+        <Card className="max-w-2xl w-full">
+          <CardContent className="pt-12 text-center space-y-6">
+            <div className="flex justify-center">
+              <CheckCircle2 className="w-16 h-16 text-green-500" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold">Resposta enviada</h2>
+              <p className="text-muted-foreground mt-2">Obrigado por preencher o formulario.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasVisualFlow) {
+    const currentIndex = currentVisualBlock ? visualInputBlocks.findIndex(block => block.id === currentVisualBlock.id) : 0;
+    const canGoBack = currentVisualBlock && visualEdges.some(edge => {
+      if (edge.target !== currentVisualBlock.id) return false;
+      return isInputBlock(visualBlocks.find(block => block.id === edge.source));
+    });
+    const progress = visualInputBlocks.length
+      ? Math.max(((Math.max(currentIndex, 0) + 1) / visualInputBlocks.length) * 100, 8)
+      : 100;
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: form.color + '10' }}>
+        <Card className="max-w-2xl w-full">
+          <CardHeader style={{ borderBottomColor: form.color, borderBottomWidth: 3 }}>
+            <CardTitle className="text-3xl">{form.title}</CardTitle>
+            {form.description && <p className="text-muted-foreground mt-2">{form.description}</p>}
+            {form.theme?.progressBar && (
+              <div className="mt-4 bg-muted rounded-full h-2">
+                <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            {currentVisualField ? (
+              <FormFieldRenderer
+                field={currentVisualField}
+                value={responses[currentVisualField.id]}
+                onChange={(value) => handleFieldChange(currentVisualField.id, value)}
+              />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Este formulario visual ainda nao possui perguntas.
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-between pt-4">
+              <Button
+                onClick={handleVisualPrev}
+                variant="outline"
+                disabled={!canGoBack || submitMutation.isPending}
+              >
+                Anterior
+              </Button>
+              <Button onClick={handleVisualNext} disabled={!currentVisualField || submitMutation.isPending} className="gap-2">
+                {submitMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {resolveNextVisualBlock(currentVisualBlock || {}) ? 'Proximo' : 'Enviar'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

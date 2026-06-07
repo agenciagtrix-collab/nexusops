@@ -12,6 +12,7 @@ import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
 import { Maximize2, MousePointer2, Move, Plus, Trash2 } from 'lucide-react';
 import FormVisualNode from './FormVisualNode';
+import { getEdgeConditionLabel } from '@/lib/form-flow';
 
 const nodeTypes = { formVisual: FormVisualNode };
 
@@ -25,11 +26,39 @@ function toReactFlowNode(block, selectedBlockId) {
   };
 }
 
-export default function FormVisualCanvas({ blocks, edges, selectedBlockId, onBlocksChange, onEdgesChange, onSelectBlock, onAddBlock, onDeleteSelected }) {
+export default function FormVisualCanvas({
+  blocks,
+  edges,
+  selectedBlockId,
+  selectedEdgeId,
+  onBlocksChange,
+  onEdgesChange,
+  onSelectBlock,
+  onSelectEdge,
+  onAddBlock,
+  onDeleteSelected,
+}) {
   const { screenToFlowPosition, fitView, zoomIn, zoomOut } = useReactFlow();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const nodes = useMemo(() => blocks.map(block => toReactFlowNode(block, selectedBlockId)), [blocks, selectedBlockId]);
+  const flowEdges = useMemo(() => edges.map(edge => {
+    const selected = edge.id === selectedEdgeId;
+    return {
+      ...edge,
+      type: edge.type || 'smoothstep',
+      label: getEdgeConditionLabel(edge),
+      selected,
+      style: {
+        stroke: selected ? '#a78bfa' : edge.condition?.type && edge.condition.type !== 'always' ? '#60a5fa' : '#94a3b8',
+        strokeWidth: selected ? 3 : 2,
+      },
+      labelStyle: { fill: '#e2e8f0', fontSize: 12, fontWeight: 600 },
+      labelBgStyle: { fill: '#0f172a', fillOpacity: 0.9 },
+      labelBgPadding: [8, 4],
+      labelBgBorderRadius: 6,
+    };
+  }), [edges, selectedEdgeId]);
 
   const handleNodesChange = useCallback((changes) => {
     const nextNodes = applyNodeChanges(changes, nodes);
@@ -72,13 +101,23 @@ export default function FormVisualCanvas({ blocks, edges, selectedBlockId, onBlo
     >
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={flowEdges}
         nodeTypes={nodeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
-        onNodeClick={(_, node) => onSelectBlock(node.id)}
-        onPaneClick={() => onSelectBlock(null)}
+        onNodeClick={(_, node) => {
+          onSelectEdge(null);
+          onSelectBlock(node.id);
+        }}
+        onEdgeClick={(_, edge) => {
+          onSelectBlock(null);
+          onSelectEdge(edge.id);
+        }}
+        onPaneClick={() => {
+          onSelectBlock(null);
+          onSelectEdge(null);
+        }}
         fitView
         fitViewOptions={{ padding: 0.25 }}
         deleteKeyCode={['Backspace', 'Delete']}
@@ -119,8 +158,8 @@ export default function FormVisualCanvas({ blocks, edges, selectedBlockId, onBlo
       </div>
 
       <div className="absolute bottom-6 right-6 z-10 flex items-center gap-2">
-        <Button type="button" size="sm" variant="secondary" className="border border-white/10 bg-slate-950/90 text-slate-100 hover:bg-slate-900" onClick={onDeleteSelected} disabled={!selectedBlockId}>
-          <Trash2 className="h-4 w-4" /> Excluir
+        <Button type="button" size="sm" variant="secondary" className="border border-white/10 bg-slate-950/90 text-slate-100 hover:bg-slate-900" onClick={onDeleteSelected} disabled={!selectedBlockId && !selectedEdgeId}>
+          <Trash2 className="h-4 w-4" /> {selectedEdgeId ? 'Conexao' : 'Excluir'}
         </Button>
         <Button type="button" size="sm" className="bg-violet-600 text-white hover:bg-violet-500" onClick={() => onAddBlock({ kind: 'short_text', typeLabel: 'Campo de Texto', label: 'Nova pergunta', icon: 'T', category: 'input', description: 'Resposta curta em texto' }, { x: 120, y: 120 })}>
           <Plus className="h-4 w-4" /> Pergunta
